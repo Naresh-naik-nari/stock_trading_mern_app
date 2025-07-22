@@ -13,7 +13,7 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 const app = express();
 
 app.use(cors({
-  origin: ["http://localhost:3000", "http://localhost:3001"],
+  origin: ["http://localhost:3000", "http://localhost:3001","https://stock-trading-mern-app.vercel.app"],
   credentials: true
 }));
 app.use(express.urlencoded({ extended: true }));

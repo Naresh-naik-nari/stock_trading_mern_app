@@ -3,9 +3,11 @@ const router = express.Router();
 const auth = require("../controllers/authMiddleware");
 const { purchaseStock, sellStock, getStockForUser, resetAccount } = require("../controllers/stockController");
 
-router.route("/").post(auth, purchaseStock);
-router.route("/").patch(auth, sellStock);
-router.route("/:userId").get(auth, getStockForUser);
-router.route("/:userId").delete(auth, resetAccount);
+// routes/stockRoutes.js
+router.route("/buy").post(auth, purchaseStock);
+router.route("/sell").patch(auth, sellStock);
+router.route("/user/:userId").get(auth, getStockForUser);
+router.route("/user/:userId").delete(auth, resetAccount);
+
 
 module.exports = router;
