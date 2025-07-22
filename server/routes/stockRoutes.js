@@ -6,8 +6,8 @@ const { purchaseStock, sellStock, getStockForUser, resetAccount } = require("../
 // routes/stockRoutes.js
 router.route("/buy").post(auth, purchaseStock);
 router.route("/sell").patch(auth, sellStock);
-router.route("/user/:userId").get(auth, getStockForUser);
-router.route("/user/:userId").delete(auth, resetAccount);
+router.route("/adduser/:id").get(auth, getStockForUser);
+router.route("/deleteuser/:id").delete(auth, resetAccount);
 
 
 module.exports = router;
