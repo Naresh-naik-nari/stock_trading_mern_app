@@ -1,0 +1,152 @@
+/* Additional custom styles for the chatbot component */
+.chatbotOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.1);
+  z-index: 999;
+  pointer-events: none;
+}
+
+.chatbotContainer {
+  position: relative;
+  z-index: 1000;
+}
+
+/* Custom scrollbar for webkit browsers */
+.chatBody::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chatBody::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.chatBody::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.chatBody::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Animation for message bubbles */
+@keyframes messageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.messageBubble {
+  animation: messageSlideIn 0.3s ease-out;
+}
+
+/* Hover effects for interactive elements */
+.quickActionChip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.chatToggle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive design adjustments */
+@media (max-width: 768px) {
+  .chatContainer {
+    width: 90vw !important;
+    height: 70vh !important;
+    bottom: 10px !important;
+    right: 5vw !important;
+    left: 5vw !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .chatContainer {
+    width: 95vw !important;
+    height: 80vh !important;
+    bottom: 5px !important;
+    right: 2.5vw !important;
+    left: 2.5vw !important;
+  }
+  
+  .chatHeader {
+    padding: 12px !important;
+  }
+  
+  .chatBody {
+    padding: 12px !important;
+  }
+  
+  .chatFooter {
+    padding: 12px !important;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .chatBody {
+    background-color: #2d2d2d !important;
+  }
+  
+  .botBubble {
+    background-color: #3d3d3d !important;
+    border-color: #555 !important;
+    color: #fff !important;
+  }
+  
+  .chatFooter {
+    background-color: #2d2d2d !important;
+    border-top-color: #555 !important;
+  }
+}
+
+/* Accessibility improvements */
+.chatToggle:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+.messageBubble:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+/* Loading animation for typing indicator */
+@keyframes typingPulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.typingDot {
+  animation: typingPulse 1.4s infinite ease-in-out;
+}
+
+.typingDot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.typingDot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+.typingDot:nth-child(3) {
+  animation-delay: 0s;
+} 

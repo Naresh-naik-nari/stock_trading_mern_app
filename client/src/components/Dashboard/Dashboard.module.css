@@ -1,0 +1,246 @@
+/* Color Variables */
+:root {
+  --success-color: #10ac84;
+  --success-light: #55efc4;
+  --error-color: #ff6b6b;
+  --error-light: #ff9ff3;
+  --primary-color: #3a61e2;
+  --secondary-color: #775ca8;
+  --background-light: #f8fafc;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
+}
+
+/* Portfolio Status Colors */
+.positive {
+  color: var(--success-color) !important;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.positive:hover {
+  color: var(--success-light) !important;
+  transform: translateY(-1px);
+}
+
+.negative {
+  color: var(--error-color) !important;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.negative:hover {
+  color: var(--error-light) !important;
+  transform: translateY(-1px);
+}
+
+/* Balance Container */
+.depositContext {
+  flex: 1;
+  padding: 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  color: white;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.depositContext::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.depositContext:hover::before {
+  left: 100%;
+}
+
+.depositContext:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(102, 126, 234, 0.4);
+}
+
+/* Margin and Spacing */
+.addMargin {
+  margin-top: 2rem;
+  padding: 1rem 0;
+}
+
+/* Portfolio Table Enhancements */
+.portfolioContainer {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.portfolioContainer:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+.tableHeader {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  font-weight: 600;
+}
+
+.tableRow {
+  transition: all 0.2s ease;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.tableRow:hover {
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  transform: scale(1.001);
+}
+
+.stockTicker {
+  font-weight: 700;
+  color: var(--primary-color);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  padding: 0.5rem;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+.stockTicker:hover {
+  background: rgba(58, 97, 226, 0.1);
+  color: var(--secondary-color);
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.stockName {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.priceCell {
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.changeIndicator {
+  font-size: 1.1rem;
+  margin-right: 0.25rem;
+  animation: pulse 2s infinite;
+}
+
+/* Error State */
+.errorContainer {
+  background: linear-gradient(135deg, #fff5f5, #fed7d7);
+  border: 2px solid var(--error-color);
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  color: var(--error-color);
+}
+
+.retryButton {
+  background: var(--error-color);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 1rem;
+}
+
+.retryButton:hover {
+  background: var(--error-light);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+/* Empty State */
+.emptyState {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-secondary);
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  border-radius: 16px;
+  border: 2px dashed var(--border-color);
+}
+
+.emptyState h3 {
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.emptyState p {
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .depositContext {
+    padding: 0.75rem;
+    border-radius: 12px;
+  }
+  
+  .addMargin {
+    margin-top: 1.5rem;
+  }
+  
+  .portfolioContainer {
+    border-radius: 12px;
+  }
+  
+  .stockTicker {
+    padding: 0.25rem;
+    font-size: 0.9rem;
+  }
+  
+  .priceCell {
+    font-size: 0.85rem;
+  }
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slideIn {
+  animation: slideIn 0.5s ease-out;
+}
