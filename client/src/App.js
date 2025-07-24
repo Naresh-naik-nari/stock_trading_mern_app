@@ -1,30 +1,26 @@
-import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import React, { useEffect, useContext, useState } from "react";
+import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import styles from "./App.module.css";
 import { Login, Register, NotFound, PageTemplate } from "./components";
 import Chatbot from "./components/Chatbot/Chatbot";
-import UserContext from "./context/UserContext";
+import UserContext, { UserProvider } from "./context/UserContext";
 import Axios from "axios";
 import config from "./config/Config";
 import LoadingSpinner from "./components/Loading/LoadingSpinner";
+import PrivateRoute from "./components/PrivateRoute";
 
 function App() {
-  const [userData, setUserData] = useState({
-    token: undefined,
-    user: undefined,
-  });
-  const [authLoading, setAuthLoading] = useState(true);
+  const { userData, setUserData, loading } = useContext(UserContext);
+  const [skipAuthCheck, setSkipAuthCheck] = useState(false);
 
   useEffect(() => {
     const checkLoggedIn = async () => {
       try {
-        setAuthLoading(true);
         let token = localStorage.getItem("auth-token");
-        if (token == null) {
-          localStorage.setItem("auth-token", "");
-          token = "";
+        
+        // Don't clear token if it doesn't exist - just set undefined state
+        if (!token || token === "") {
           setUserData({ token: undefined, user: undefined });
-          setAuthLoading(false);
           return;
         }
 
@@ -49,20 +45,36 @@ function App() {
             user: userRes.data,
           });
         } else {
+          // Only clear localStorage if token validation explicitly fails
+          console.log("Token validation failed, clearing localStorage");
+          localStorage.removeItem("auth-token");
+          localStorage.removeItem("user-data");
           setUserData({ token: undefined, user: undefined });
         }
       } catch (error) {
         console.error('Auth check failed:', error);
+        // Don't clear localStorage on network errors - might be temporary
+        console.log("Auth check failed due to network error, keeping token for retry");
         setUserData({ token: undefined, user: undefined });
-      } finally {
-        setAuthLoading(false);
       }
     };
 
-    checkLoggedIn();
-  }, []);
+    if (!loading && !skipAuthCheck) {
+      checkLoggedIn();
+    }
+  }, [loading, setUserData, skipAuthCheck]);
 
-  if (authLoading) {
+  useEffect(() => {
+    if (userData.token) {
+      setSkipAuthCheck(true);
+      const timer = setTimeout(() => {
+        setSkipAuthCheck(false);
+      }, 3000); // skip auth check for 3 seconds after login
+      return () => clearTimeout(timer);
+    }
+  }, [userData.token]);
+
+  if (loading) {
     return (
       <LoadingSpinner 
         fullScreen 
@@ -74,23 +86,28 @@ function App() {
 
   return (
     <Router>
-      <UserContext.Provider value={{ userData, setUserData }}>
-        <div className={styles.container}>
-          <Routes>
-            {userData.user ? (
-              <Route path="/" element={<PageTemplate />} />
-            ) : (
-              <Route path="/" element={<Register />} />
-            )}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          {userData.user && <Chatbot />}
-        </div>
-      </UserContext.Provider>
+      <div className={styles.container}>
+        <Routes>
+          <Route path="/" element={<Navigate to={userData.user ? "/dashboard" : "/login"} replace />} />
+          <Route path="/dashboard" element={
+            <PrivateRoute>
+              <PageTemplate />
+            </PrivateRoute>
+          } />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+        {userData.user && <Chatbot />}
+      </div>
     </Router>
   );
 }
 
-export default App;
+const AppWrapper = () => (
+  <UserProvider>
+    <App />
+  </UserProvider>
+);
+
+export default AppWrapper;

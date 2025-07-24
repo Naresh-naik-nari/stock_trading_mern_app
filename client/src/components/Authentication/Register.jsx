@@ -34,6 +34,16 @@ const Register = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  // ✅ Redirect after success message
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        navigate("/login");
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage, navigate]);
+
   const onChangeUsername = (e) => {
     const newUsername = e.target.value;
     setUsername(newUsername);
@@ -91,22 +101,16 @@ const Register = () => {
         }
       } else if (registerRes.status === 201) {
         setSuccessMessage("Registration successful! Redirecting to login...");
-        useEffect(() => {
-          if (successMessage) {
-            setTimeout(() => navigate("/login"), 2000);
-          }
-        }, [successMessage, navigate]);
       }
     } catch (err) {
       setUsernameError("");
       setPasswordError("");
-      setEmailError("Something went wrong. Please try again.");
+      setEmailError("");
       setRoleError("");
     } finally {
       setLoading(false);
     }
   };
-  
 
   return (
     <div className={styles.background}>

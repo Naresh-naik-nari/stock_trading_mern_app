@@ -99,7 +99,7 @@ const PurchaseModalContent = ({
       quantity: Number(quantity),
       price: pastDay.adjClose,
     };
-    const url = config.base_url + "/api/stock";
+    const url = config.base_url + "/api/stock/buy";
     try {
       const response = await Axios.post(url, purchase, {
         headers,

@@ -66,7 +66,7 @@ const SaleModalContent = ({ setSaleOpen, stock }) => {
       userId: userData.user.id,
       price: Number(stock.currentPrice),
     };
-    const url = config.base_url + `/api/stock`;
+    const url = config.base_url + `/api/stock/sell`;
     try {
       const response = await Axios.patch(url, data, {
         headers,

@@ -19,7 +19,7 @@ import styles from "./Auth.module.css";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { setUserData, setUser, setRole } = useContext(UserContext);
+  const { setUserData } = useContext(UserContext);
 
   const [username, setUsername] = useState("");
   const [usernameError, setUsernameError] = useState("");
@@ -49,10 +49,12 @@ const Login = () => {
     setSuccessMessage("");
     setUsernameError("");
     setPasswordError("");
+    
     try {
       const newUser = { username, password };
       const url = config.base_url + "/api/auth/login";
       const res = await Axios.post(url, newUser);
+      
       if (res.data.status === "fail") {
         // Show only relevant error
         if (res.data.message.toLowerCase().includes("username")) {
@@ -64,26 +66,36 @@ const Login = () => {
           setPasswordError(res.data.message);
         }
       } else {
-        setUserData(res.data);
+        console.log("Login successful, setting userData:", res.data);
+        
+        // Set localStorage first
         localStorage.setItem("auth-token", res.data.token);
+        localStorage.setItem("user-data", JSON.stringify(res.data.user));
+        
+        // Update context
+        setUserData({ token: res.data.token, user: res.data.user });
+        
         setSuccessMessage("Login successful! Redirecting...");
+        
+        // Add a small delay to ensure context is updated
         setTimeout(() => {
           if (res.data.user.role === "admin") {
-            navigate("/admin");
+            navigate("/admin", { replace: true });
           } else if (res.data.user.role === "guest") {
-            navigate("/guest");
+            navigate("/guest", { replace: true });
           } else {
-            navigate("/");
+            navigate("/dashboard", { replace: true });
           }
-        }, 1500);
+        }, 100);
       }
     } catch (err) {
+      console.error("Login error:", err);
       setUsernameError("");
       setPasswordError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
     <div className={styles.background}>

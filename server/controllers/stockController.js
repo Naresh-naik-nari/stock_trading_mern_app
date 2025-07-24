@@ -144,14 +144,24 @@ const getPricesData = async (stocks) => {
 
 exports.getStockForUser = async (req, res) => {
   try {
-    if (req.user !== req.params.userId) {
+    console.log('getStockForUser called with user:', req.user, 'params.id:', req.params.id);
+    console.log('User types - req.user:', typeof req.user, 'req.params.id:', typeof req.params.id);
+    
+    // Ensure both values are strings for comparison
+    const userId = String(req.user);
+    const paramId = String(req.params.id);
+    
+    if (userId !== paramId) {
+      console.log('Authentication failed: user mismatch -', userId, '!==', paramId);
       return res.status(200).json({
         status: "fail",
         message: "Credentials couldn't be validated.",
       });
     }
 
-    const stocks = await Stock.find({ userId: req.params.userId });
+    console.log('Fetching stocks for user:', req.params.id);
+    const stocks = await Stock.find({ userId: req.params.id });
+    console.log('Found stocks:', stocks.length);
     const stocksData = await getPricesData(stocks);
     const modifiedStocks = stocks.map((stock) => {
       let name;
@@ -196,19 +206,19 @@ exports.getStockForUser = async (req, res) => {
 
 exports.resetAccount = async (req, res) => {
   try {
-    if (req.user !== req.params.userId) {
+    if (req.user !== req.params.id) {
       return res.status(200).json({
         status: "fail",
         message: "Credentials couldn't be validated.",
       });
     }
 
-    const stocks = await Stock.find({ userId: req.params.userId });
+    const stocks = await Stock.find({ userId: req.params.id });
     stocks.forEach(async (stock) => {
       await Stock.findByIdAndDelete(stock._id);
     });
 
-    const updatedUser = await User.findByIdAndUpdate(req.params.userId, {
+    const updatedUser = await User.findByIdAndUpdate(req.params.id, {
       balance: 100000,
     });
 

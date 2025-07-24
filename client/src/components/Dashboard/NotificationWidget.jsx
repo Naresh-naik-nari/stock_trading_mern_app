@@ -1,72 +1,29 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, Typography, CircularProgress, List, ListItem, ListItemText, Divider, Chip } from "@material-ui/core";
 import { Notifications as NotificationsIcon } from "@material-ui/icons";
+import { useWebSocket } from "../../context/WebSocketContext";
 
 export default function NotificationWidget() {
+  const { status, error, messages } = useWebSocket();
   const [notifications, setNotifications] = useState([]);
-  const [status, setStatus] = useState("connecting");
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    let ws = null;
-    const connectWebSocket = () => {
-      try {
-        ws = new WebSocket('ws://localhost:5000/ws');
-        
-        ws.onopen = () => {
-          setStatus('connected');
-          setError(null);
-        };
-
-        ws.onmessage = (event) => {
-          try {
-            const msg = JSON.parse(event.data);
-            if (msg.type === 'notification') {
-              setNotifications((prev) => [msg, ...prev.slice(0, 9)]); // Keep last 10 notifications
-            }
-          } catch (err) {
-            console.error('Error parsing message:', err);
-          }
-        };
-
-        ws.onclose = () => {
-          setStatus('disconnected');
-          setTimeout(connectWebSocket, 3000);
-        };
-
-        ws.onerror = (err) => {
-          setStatus('error');
-          setError('Connection error occurred');
-          console.error('WebSocket error:', err);
-        };
-      } catch (err) {
-        setStatus('error');
-        setError('Failed to establish connection');
-        console.error('WebSocket connection error:', err);
-      }
-    };
-
-    connectWebSocket();
-
-    return () => {
-      if (ws) {
-        ws.close();
-      }
-    };
-  }, []);
+    const notificationMessages = messages.filter(msg => msg.type === "notification");
+    setNotifications(notificationMessages.slice(0, 10));
+  }, [messages]);
 
   const getNotificationColor = (message) => {
-    if (message.includes('alert') || message.includes('volatility')) return 'secondary';
-    if (message.includes('opportunity') || message.includes('up')) return 'primary';
-    if (message.includes('rebalancing')) return 'secondary';
-    return 'default';
+    if (message.includes("alert") || message.includes("volatility")) return "secondary";
+    if (message.includes("opportunity") || message.includes("up")) return "primary";
+    if (message.includes("rebalancing")) return "secondary";
+    return "default";
   };
 
   return (
     <Card>
       <CardContent>
         <Typography variant="h6" gutterBottom>
-          <NotificationsIcon style={{ marginRight: 8, verticalAlign: 'middle' }} />
+          <NotificationsIcon style={{ marginRight: 8, verticalAlign: "middle" }} />
           Notifications (Real-time)
         </Typography>
         <Typography variant="body2" color="textSecondary" gutterBottom>
@@ -77,7 +34,7 @@ export default function NotificationWidget() {
             {error}
           </Typography>
         )}
-        {status === 'connecting' && <CircularProgress size={20} />}
+        {status === "connecting" && <CircularProgress size={20} />}
         {notifications.length > 0 ? (
           <>
             <List>
@@ -93,10 +50,7 @@ export default function NotificationWidget() {
                           variant="outlined"
                         />
                       }
-                      secondary={
-                        notification.timestamp && 
-                        new Date(notification.timestamp).toLocaleTimeString()
-                      }
+                      secondary={notification.timestamp && new Date(notification.timestamp).toLocaleTimeString()}
                     />
                   </ListItem>
                   {index < notifications.length - 1 && <Divider />}
@@ -112,4 +66,4 @@ export default function NotificationWidget() {
       </CardContent>
     </Card>
   );
-} 
+}

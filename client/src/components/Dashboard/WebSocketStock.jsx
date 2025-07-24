@@ -1,59 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, Typography, CircularProgress } from "@material-ui/core";
+import { useWebSocket } from "../../context/WebSocketContext";
 
 export default function WebSocketStock() {
+  const { status, error, messages } = useWebSocket();
   const [stock, setStock] = useState(null);
-  const [status, setStatus] = useState('connecting');
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    let ws = null;
-    const connectWebSocket = () => {
-      try {
-        ws = new WebSocket('ws://localhost:5000/ws');
-        
-        ws.onopen = () => {
-          setStatus('connected');
-          setError(null);
-        };
-
-        ws.onmessage = (event) => {
-          try {
-            const msg = JSON.parse(event.data);
-            if (msg.type === 'stock_update') {
-              setStock(msg.data);
-            }
-          } catch (err) {
-            console.error('Error parsing message:', err);
-          }
-        };
-
-        ws.onclose = () => {
-          setStatus('disconnected');
-          // Try to reconnect after 3 seconds
-          setTimeout(connectWebSocket, 3000);
-        };
-
-        ws.onerror = (err) => {
-          setStatus('error');
-          setError('Connection error occurred');
-          console.error('WebSocket error:', err);
-        };
-      } catch (err) {
-        setStatus('error');
-        setError('Failed to establish connection');
-        console.error('WebSocket connection error:', err);
-      }
-    };
-
-    connectWebSocket();
-
-    return () => {
-      if (ws) {
-        ws.close();
-      }
-    };
-  }, []);
+    const stockMessages = messages.filter(msg => msg.type === "stock_update");
+    if (stockMessages.length > 0) {
+      setStock(stockMessages[0].data);
+    }
+  }, [messages]);
 
   return (
     <Card>
@@ -69,7 +27,7 @@ export default function WebSocketStock() {
             {error}
           </Typography>
         )}
-        {status === 'connecting' && <CircularProgress size={20} />}
+        {status === "connecting" && <CircularProgress size={20} />}
         {stock && (
           <Typography variant="h5">
             {stock.symbol}: ${stock.price}
@@ -81,4 +39,4 @@ export default function WebSocketStock() {
       </CardContent>
     </Card>
   );
-} 
+}

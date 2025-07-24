@@ -29,9 +29,12 @@ mongoose
     useUnifiedTopology: true,
   })
   .then(() => {
-    console.log("Connected to DB");
+    console.log("Connected to DB successfully");
   })
-  .catch((err) => console.log(err));
+  .catch((err) => {
+    console.error("MongoDB connection error:", err);
+    console.error("Connection string (masked):", DB ? DB.replace(/\/\/[^:]+:[^@]+@/, "//***:***@") : "undefined");
+  });
 
 // ROUTES
 const authRouter = require("./routes/authRoutes");
@@ -63,7 +66,9 @@ const broadcast = (data) => {
 
 // WebSocket connection handling
 wss.on('connection', (ws, req) => {
-  console.log('New WebSocket connection established');
+  const clientIP = req.socket.remoteAddress;
+  console.log(`New WebSocket connection established from ${clientIP}`);
+  console.log('Request headers:', req.headers);
 
   // Send initial data
   const initialData = {
@@ -100,8 +105,9 @@ wss.on('connection', (ws, req) => {
   });
 
   // Handle client disconnection
-  ws.on('close', () => {
-    console.log('Client disconnected');
+  ws.on('close', (code, reason) => {
+    const reasonStr = reason ? reason.toString() : '';
+    console.log(`Client disconnected with code: ${code}, reason: ${reasonStr}`);
   });
 
   // Handle errors
@@ -110,7 +116,7 @@ wss.on('connection', (ws, req) => {
   });
 });
 
-// Ping all clients every 30 seconds
+// Ping all clients every 60 seconds
 const interval = setInterval(() => {
   wss.clients.forEach((ws) => {
     if (!ws.isAlive) {
@@ -118,12 +124,14 @@ const interval = setInterval(() => {
       return ws.terminate();
     }
     ws.isAlive = false;
+    console.log('Sending ping to client');
     ws.ping();
   });
-}, 30000);
+}, 60000);
 
 // Clean up on server close
 wss.on('close', () => {
+  console.log('WebSocket server closed');
   clearInterval(interval);
 });
 

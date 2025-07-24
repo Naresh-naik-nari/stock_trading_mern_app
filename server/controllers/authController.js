@@ -113,3 +113,22 @@ exports.validate = async (req, res) => {
     return res.json(false);
   }
 };
+
+// exports.auth = (req, res, next) => {
+//   try {
+//     const token = req.header("x-auth-token");
+//     if (!token)
+//       return res.status(401).json({ status: "fail", message: "No token, authorization denied" });
+
+//     const verified = jwt.verify(token, process.env.JWT_SECRET);
+//     if (!verified)
+//       return res.status(401).json({ status: "fail", message: "Token verification failed" });
+
+//     req.user = verified; // attach user info to request
+//     next();
+//   } catch (err) {
+//     return res.status(401).json({ status: "fail", message: "Credentials couldn't be validated." });
+//   }
+// };
+
+

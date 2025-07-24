@@ -77,33 +77,102 @@ const PageTemplate = () => {
   const [purchasedStocks, setPurchasedStocks] = useState([]);
   const [portfolioLoading, setPortfolioLoading] = useState(true);
   const [portfolioError, setPortfolioError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
 
-  if (!userData.user) {
-    navigate("/login");
-  }
+  useEffect(() => {
+    const init = async () => {
+      const token = localStorage.getItem("auth-token");
+      const user = JSON.parse(localStorage.getItem("user-data"));
 
-  const getPurchasedStocks = async () => {
+      if (token && user) {
+        // Remove the token expiration check for now since it's causing issues
+        setUserData({ token, user });
+        getPurchasedStocks({ token, user });
+      } else {
+        console.log("No token or user found, navigating to login");
+        navigate("/login");
+      }
+    };
+
+    init();
+  }, []);
+
+  const getPurchasedStocks = async (overrideUserData) => {
+    const user = overrideUserData?.user || userData?.user;
+    const token = overrideUserData?.token || userData?.token;
+
+    if (!user?.id || !token) {
+      console.warn("Missing user or token in getPurchasedStocks", { user, token });
+      setPortfolioLoading(false);
+      setPortfolioError("User not authenticated");
+      logout();
+      return;
+    }
+
     try {
       setPortfolioLoading(true);
       setPortfolioError(null);
-      
-      const url = config.base_url + `/api/stock/${userData.user.id}`;
+
+      if (!config?.base_url) {
+        throw new Error("API configuration missing");
+      }
+
+      const url = `${config.base_url}/api/stock/adduser/${user.id}`;
+      console.log(url)
       const headers = {
-        "x-auth-token": userData.token,
+        "x-auth-token": token,
+        "Content-Type": "application/json",
       };
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       const response = await Axios.get(url, {
         headers,
+        signal: controller.signal,
+        timeout: 10000,
       });
 
-      if (response.data.status === "success") {
-        setPurchasedStocks(response.data.stocks);
+      clearTimeout(timeoutId);
+
+      console.log("Portfolio response:", response.data);
+
+      if (response?.data?.status === "success") {
+        setPurchasedStocks(response.data.stocks || []);
+      } else if (response?.data?.status === "fail") {
+        if (response.data.message.includes("Credentials") || response.data.message.includes("Session expired")) {
+          throw new Error("Session expired. Please log in again.");
+        }
+        throw new Error(response.data.message || "Request failed");
+      } else if (response?.data?.status === "error") {
+        throw new Error(response.data.message || "Server error");
+      } else if (Array.isArray(response?.data)) {
+        setPurchasedStocks(response.data);
       } else {
-        throw new Error('Failed to load portfolio data');
+        throw new Error("Unexpected response format from server");
       }
     } catch (error) {
-      console.error('Portfolio loading error:', error);
-      setPortfolioError('Failed to load your portfolio. Please refresh the page.');
+      console.error("Portfolio loading error:", error);
+
+      let errorMessage = "Failed to load your portfolio. ";
+
+      if (error.code === "ECONNABORTED" || error.message.includes("timeout")) {
+        errorMessage += "Request timed out. Please check your connection.";
+      } else if (error.response?.status === 401 || error.message.includes("Credentials")) {
+        errorMessage = "Session expired. Please log in again.";
+        logout();
+        return;
+      } else if (error.response?.status === 404) {
+        errorMessage += "Portfolio service not found.";
+      } else if (error.response?.status >= 500) {
+        errorMessage += "Server error. Please try again later.";
+      } else if (error.message.includes("Network Error")) {
+        errorMessage += "Network connection failed.";
+      } else {
+        errorMessage += error.message || "Unknown error occurred.";
+      }
+
+      setPortfolioError(errorMessage);
       setPurchasedStocks([]);
     } finally {
       setPortfolioLoading(false);
@@ -111,15 +180,29 @@ const PageTemplate = () => {
   };
 
   useEffect(() => {
-    getPurchasedStocks();
-  }, []);
+    if (
+      retryCount < 3 &&
+      portfolioError &&
+      !portfolioLoading &&
+      userData?.token &&
+      userData?.user
+    ) {
+      const timer = setTimeout(() => {
+        getPurchasedStocks({ token: userData.token, user: userData.user });
+        setRetryCount(retryCount + 1);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [portfolioError, retryCount, userData]);
 
   const logout = () => {
+    console.log("Logout called: removing auth-token from localStorage");
     setUserData({
       token: undefined,
       user: undefined,
     });
-    localStorage.setItem("auth-token", "");
+    localStorage.removeItem("auth-token");
+    localStorage.removeItem("user-data");
     navigate("/login");
   };
 
@@ -135,79 +218,86 @@ const PageTemplate = () => {
     setSettingsOpen(true);
   };
 
+  if (!userData?.user) {
+    return <LoadingSpinner />;
+  }
+
   return (
     <div className={styles.root}>
       <CssBaseline />
-        <AppBar
-          position="absolute"
-          className={clsx(
-            styles.appBarBackground,
-            classes.appBar,
-            open && classes.appBarShift
-          )}
-        >
-          <Toolbar className={styles.toolbar}>
-            <IconButton
-              edge="start"
-              color="inherit"
-              aria-label="open drawer"
-              onClick={handleDrawerOpen}
-              className={clsx(
-                styles.menuButton,
-                open && styles.menuButtonHidden
-              )}
-            >
-              <MenuIcon />
-            </IconButton>
-            <Typography
-              component="h1"
-              variant="h6"
-              color="inherit"
-              noWrap
-              className={styles.title}
-            >
-              {currentPage === "dashboard" && "Dashboard"}
-              {currentPage === "news" && ""}
-              {currentPage === "search" && "Search"}
-            </Typography>
-            <Typography color="inherit">
-              Hello,{" "}
-              {userData.user.username
-                ? userData.user.username.charAt(0).toUpperCase() +
-                  userData.user.username.slice(1)
-                : ""}
-            </Typography>
-          </Toolbar>
-        </AppBar>
-        <Drawer
-          variant="permanent"
-          classes={{
-            paper: clsx(classes.drawerPaper, !open && classes.drawerPaperClose),
-          }}
-          open={open}
-        >
-          <div className={styles.toolbarIcon}>
-            <IconButton onClick={handleDrawerClose}>
-              <ChevronLeftIcon />
-            </IconButton>
-          </div>
-          <Divider />
-          <List>
-            <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
-          </List>
-          <Divider />
-          <List>
-            <SecondNavbar logout={logout} openSettings={openSettings} />
-          </List>
-        </Drawer>
+      <AppBar
+        position="absolute"
+        className={clsx(
+          styles.appBarBackground,
+          classes.appBar,
+          open && classes.appBarShift
+        )}
+      >
+        <Toolbar className={styles.toolbar}>
+          <IconButton
+            edge="start"
+            color="inherit"
+            aria-label="open drawer"
+            onClick={handleDrawerOpen}
+            className={clsx(
+              styles.menuButton,
+              open && styles.menuButtonHidden
+            )}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Typography
+            component="h1"
+            variant="h6"
+            color="inherit"
+            noWrap
+            className={styles.title}
+          >
+            {currentPage === "dashboard" && "Dashboard"}
+            {currentPage === "news" && "News"}
+            {currentPage === "search" && "Search"}
+          </Typography>
+          <Typography color="inherit">
+            Hello,{" "}
+            {userData.user?.username
+              ? userData.user.username.charAt(0).toUpperCase() +
+              userData.user.username.slice(1)
+              : "User"}
+          </Typography>
+        </Toolbar>
+      </AppBar>
+      <Drawer
+        variant="permanent"
+        classes={{
+          paper: clsx(classes.drawerPaper, !open && classes.drawerPaperClose),
+        }}
+        open={open}
+      >
+        <div className={styles.toolbarIcon}>
+          <IconButton onClick={handleDrawerClose}>
+            <ChevronLeftIcon />
+          </IconButton>
+        </div>
+        <Divider />
+        <List>
+          <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
+        </List>
+        <Divider />
+        <List>
+          <SecondNavbar logout={logout} openSettings={openSettings} />
+        </List>
+      </Drawer>
       <main className={styles.content}>
         <div className={classes.appBarSpacer} />
         {currentPage === "dashboard" && (
-          <Dashboard 
-            purchasedStocks={purchasedStocks} 
+          <Dashboard
+            purchasedStocks={purchasedStocks}
             portfolioLoading={portfolioLoading}
             portfolioError={portfolioError}
-            refreshPortfolio={getPurchasedStocks}
+            refreshPortfolio={() => {
+              setRetryCount(0);
+              getPurchasedStocks({ token: userData.token, user: userData.user });
+            }}
           />
         )}
         {currentPage === "news" && <News />}
