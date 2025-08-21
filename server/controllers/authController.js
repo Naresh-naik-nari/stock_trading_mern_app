@@ -65,7 +65,9 @@ exports.loginUser = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ username });
+    // Normalize username to lowercase to match how it's stored in DB
+    const normalizedUsername = typeof username === 'string' ? username.toLowerCase() : username;
+    const user = await User.findOne({ username: normalizedUsername });
     if (!user) {
       return res.status(200).json({
         status: "fail",
@@ -113,5 +115,22 @@ exports.validate = async (req, res) => {
     return res.json(false);
   }
 };
+
+// exports.auth = (req, res, next) => {
+//   try {
+//     const token = req.header("x-auth-token");
+//     if (!token)
+//       return res.status(401).json({ status: "fail", message: "No token, authorization denied" });
+
+//     const verified = jwt.verify(token, process.env.JWT_SECRET);
+//     if (!verified)
+//       return res.status(401).json({ status: "fail", message: "Token verification failed" });
+
+//     req.user = verified; // attach user info to request
+//     next();
+//   } catch (err) {
+//     return res.status(401).json({ status: "fail", message: "Credentials couldn't be validated." });
+//   }
+// };
 
 

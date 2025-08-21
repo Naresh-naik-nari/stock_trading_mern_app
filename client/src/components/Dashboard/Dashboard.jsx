@@ -9,7 +9,6 @@ import EnhancedPurchases from "./EnhancedPurchases";
 import Copyright from "../Template/Copyright";
 import RealtimeDemo from "./RealtimeDemo";
 import LoadingSpinner from "../Loading/LoadingSpinner";
-import News from "../News/News";
 
 const useStyles = makeStyles((theme) => ({
   paper: {
@@ -22,6 +21,7 @@ const useStyles = makeStyles((theme) => ({
     height: 350,
   },
 }));
+
 const Dashboard = ({ purchasedStocks, portfolioLoading, portfolioError, refreshPortfolio }) => {
   const classes = useStyles();
   const fixedHeightPaper = clsx(classes.paper, classes.fixedHeight);
@@ -55,6 +55,7 @@ const Dashboard = ({ purchasedStocks, portfolioLoading, portfolioError, refreshP
             />
           </Paper>
         </Grid>
+        <RealtimeDemo />
       </Grid>
       <Box pt={4}>
         <Copyright />

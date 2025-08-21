@@ -123,7 +123,7 @@ const Register = () => {
         justify="center"
         style={{ minHeight: "100vh" }}
       >
-        <Box width="100%" maxWidth={400} boxShadow={1}>
+        <Box width="70vh" boxShadow={1}>
           <Card className={styles.paper}>
             <CardContent>
               <Typography component="h1" variant="h5">
