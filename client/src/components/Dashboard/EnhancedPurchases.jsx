@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, Typography, Box } from "@material-ui/core";
+import { Link, Typography, Box, Button } from "@material-ui/core";
 import Table from "@material-ui/core/Table";
 import TableBody from "@material-ui/core/TableBody";
 import TableCell from "@material-ui/core/TableCell";
@@ -73,6 +73,7 @@ const EnhancedPurchases = ({ purchasedStocks, portfolioLoading, portfolioError, 
               <TableCell align="right" style={{color: 'white', fontWeight: 600}}>📈 Current</TableCell>
               <TableCell align="right" style={{color: 'white', fontWeight: 600}}>💎 Worth</TableCell>
               <TableCell align="right" style={{color: 'white', fontWeight: 600}}>📊 Performance</TableCell>
+              <TableCell align="center" style={{color: 'white', fontWeight: 600}}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -147,6 +148,16 @@ const EnhancedPurchases = ({ purchasedStocks, portfolioLoading, portfolioError, 
                         ${profitLoss >= 0 ? '+' : ''}${roundNumber(profitLoss).toLocaleString()}
                       </Typography>
                     </div>
+                  </TableCell>
+                  <TableCell align="center">
+                    <Button 
+                      variant="contained" 
+                      color="secondary" 
+                      size="small" 
+                      onClick={() => openSaleModal(row)}
+                    >
+                      Sell
+                    </Button>
                   </TableCell>
                 </TableRow>
               );

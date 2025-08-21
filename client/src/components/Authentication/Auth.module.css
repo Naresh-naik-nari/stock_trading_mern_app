@@ -17,6 +17,12 @@
   width: 30%;
 }
 
+@media (max-width: 600px) {
+  .submit {
+    width: 100% !important;
+  }
+}
+
 .background {
   background-color: #4568dc;
   background: linear-gradient(315deg, #3a61e2 0%, #a65ca8 100%);

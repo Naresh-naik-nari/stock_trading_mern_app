@@ -43,8 +43,12 @@ const SaleModalContent = ({ setSaleOpen, stock }) => {
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleQuantityChange = (e) => {
-    if (!isNaN(e.target.value) && Number(e.target.value) <= stock.quantity) {
-      setQuantity(e.target.value);
+    const val = e.target.value;
+    if (!isNaN(val) && Number(val) >= 1 && Number(val) <= stock.quantity) {
+      setQuantity(val);
+      setErrorMessage("");
+    } else {
+      setErrorMessage(`Quantity must be between 1 and ${stock.quantity}`);
     }
   };
 
@@ -87,15 +91,17 @@ const SaleModalContent = ({ setSaleOpen, stock }) => {
   return (
     <Grid
       container
-      spacing={0}
+      spacing={2}
       direction="column"
       alignItems="center"
       justify="center"
-      style={{ minHeight: "100vh" }}
+      style={{ minHeight: "100vh", padding: 16, overflowY: "auto" }}
     >
-      <Box width="60vh" boxShadow={1}>
+      <Box width="100%" maxWidth="400px" boxShadow={3} borderRadius={8} bgcolor="background.paper" p={3}>
         <Card>
           <CardHeader
+            title="Sell Stock"
+            titleTypographyProps={{ align: "center", variant: "h6" }}
             action={
               <IconButton aria-label="Close" onClick={handleClick}>
                 <CloseIcon />
@@ -103,9 +109,6 @@ const SaleModalContent = ({ setSaleOpen, stock }) => {
             }
           />
           <CardContent>
-            <Typography component="h1" variant="h6" align="center">
-              Sell
-            </Typography>
             {successMessage && (
               <Typography color="primary" align="center" style={{ marginBottom: 10 }}>
                 {successMessage}
@@ -117,57 +120,61 @@ const SaleModalContent = ({ setSaleOpen, stock }) => {
               </Typography>
             )}
             <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
-              <TextField
-                variant="outlined"
-                margin="normal"
-                fullWidth
-                disabled
-                id="name"
-                label="Name"
-                name="Name"
-                autoComplete="Name"
-                value={stock.name}
-              />
-              <TextField
-                variant="outlined"
-                margin="normal"
-                fullWidth
-                disabled
-                id="price"
-                label="Price"
-                name="price"
-                autoComplete="price"
-                value={stock.currentPrice}
-              />
-              <TextField
-                variant="outlined"
-                margin="normal"
-                required
-                fullWidth
-                id="quantity"
-                label="Quantity"
-                name="quantity"
-                autoComplete="quantity"
-                value={quantity}
-                onChange={handleQuantityChange}
-                disabled={loading}
-              />
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <TextField
+                    variant="outlined"
+                    fullWidth
+                    disabled
+                    id="name"
+                    label="Name"
+                    name="Name"
+                    autoComplete="Name"
+                    value={stock.name}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    variant="outlined"
+                    fullWidth
+                    disabled
+                    id="price"
+                    label="Price"
+                    name="price"
+                    autoComplete="price"
+                    value={stock.currentPrice}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    variant="outlined"
+                    required
+                    fullWidth
+                    id="quantity"
+                    label="Quantity"
+                    name="quantity"
+                    autoComplete="quantity"
+                    type="number"
+                    inputProps={{ min: 1, max: stock.quantity }}
+                    value={quantity}
+                    onChange={handleQuantityChange}
+                    disabled={loading}
+                  />
+                </Grid>
+              </Grid>
             </form>
-            <br />
-            <Box display="flex" justifyContent="center">
+            <Box display="flex" justifyContent="center" mt={3}>
               <Button
                 type="submit"
                 variant="contained"
                 color="primary"
                 className={styles.confirm}
                 onClick={sellStock}
-                disabled={loading}
+                disabled={loading || !!errorMessage || quantity < 1}
               >
                 {loading ? "Processing..." : "Confirm"}
               </Button>
             </Box>
-            <br />
-            <br />
           </CardContent>
         </Card>
       </Box>

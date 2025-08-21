@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useContext } from "react";
+import React, { useState, useRef, useEffect, useContext, useCallback } from "react";
 import {
   Paper,
   TextField,
@@ -20,7 +20,8 @@ import {
   ListItemText,
   Card,
   CardContent,
-  LinearProgress
+  LinearProgress,
+  CircularProgress
 } from "@material-ui/core";
 import MuiAlert from '@material-ui/lab/Alert';
 import Snackbar from '@material-ui/core/Snackbar';
@@ -43,10 +44,15 @@ import {
   School as SchoolIcon,
   Notifications as NotificationsIcon,
   Minimize as MinimizeIcon,
-  ExpandMore as ExpandIcon
+  ExpandMore as ExpandIcon,
+  Wifi as ConnectedIcon,
+  WifiOff as DisconnectedIcon,
+  ShowChart as ChartIcon
 } from "@material-ui/icons";
 import { makeStyles } from "@material-ui/core/styles";
 import UserContext from "../../context/UserContext";
+import config from "../../config/Config";
+import Axios from "axios";
 
 const useStyles = makeStyles((theme) => ({
   chatContainer: {
@@ -61,6 +67,13 @@ const useStyles = makeStyles((theme) => ({
     borderRadius: '12px',
     boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
     transition: 'all 0.3s ease-in-out',
+    [theme.breakpoints.down('sm')]: {
+      width: '90vw',
+      height: '70vh',
+      bottom: 10,
+      right: 10,
+      left: 10,
+    },
     '&:hover': {
       boxShadow: '0 12px 40px rgba(0,0,0,0.16)',
     }
@@ -158,21 +171,19 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex',
     flexWrap: 'wrap',
     gap: theme.spacing(1),
-    marginTop: theme.spacing(2),
-    padding: theme.spacing(1),
-    backgroundColor: 'rgba(0,0,0,0.02)',
-    borderRadius: '8px',
-    border: '1px solid rgba(0,0,0,0.05)',
+    marginTop: theme.spacing(1),
   },
   quickActionChip: {
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    color: 'white',
-    fontWeight: 500,
+    margin: theme.spacing(0.5),
     '&:hover': {
-      transform: 'translateY(-2px)',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+      transform: 'scale(1.05)',
+      transition: 'transform 0.2s ease',
     },
-    transition: 'all 0.2s ease',
+  },
+  welcomeCard: {
+    marginBottom: theme.spacing(2),
+    background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+    border: '1px solid #e0e0e0',
   },
   typingIndicator: {
     display: 'flex',
@@ -194,12 +205,6 @@ const useStyles = makeStyles((theme) => ({
     '&:nth-child(1)': { animationDelay: '-0.32s' },
     '&:nth-child(2)': { animationDelay: '-0.16s' },
   },
-  welcomeCard: {
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    color: 'white',
-    marginBottom: theme.spacing(2),
-    borderRadius: '12px',
-  },
   featureList: {
     marginTop: theme.spacing(1),
   },
@@ -220,12 +225,12 @@ const useStyles = makeStyles((theme) => ({
     },
   },
   '@keyframes typing': {
-    '0%, 80%, 100%': {
-      transform: 'scale(0.8)',
+    '0%, 60%, 100%': {
+      transform: 'scale(1)',
       opacity: 0.5,
     },
-    '40%': {
-      transform: 'scale(1)',
+    '30%': {
+      transform: 'scale(1.2)',
       opacity: 1,
     },
   },
@@ -261,7 +266,16 @@ export default function Chatbot() {
   const [isTyping, setIsTyping] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
+  const [isConnected, setIsConnected] = useState(false);
+  const [realTimeData, setRealTimeData] = useState({
+    stockPrices: {},
+    portfolioValue: null,
+    marketTrends: {},
+    lastUpdate: null
+  });
+  const [isLoadingData, setIsLoadingData] = useState(false);
   const messagesEndRef = useRef(null);
+  const wsRef = useRef(null);
 
   const quickActions = [
     { label: "Portfolio Analysis", icon: <AccountBalanceIcon />, action: "analyze portfolio" },
@@ -273,6 +287,123 @@ export default function Chatbot() {
     { label: "Education", icon: <SchoolIcon />, action: "trading education" },
     { label: "Market News", icon: <NotificationsIcon />, action: "latest market news" },
   ];
+
+  // WebSocket connection setup
+  const connectWebSocket = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      return;
+    }
+
+    try {
+      const wsUrl = config.base_url.replace('http', 'ws') + '/ws';
+      wsRef.current = new WebSocket(wsUrl);
+
+      wsRef.current.onopen = () => {
+        console.log('WebSocket connected');
+        setIsConnected(true);
+        // Subscribe to real-time updates
+        wsRef.current.send(JSON.stringify({
+          type: 'subscribe_stock',
+          symbols: ['AAPL', 'GOOGL', 'MSFT', 'TSLA']
+        }));
+      };
+
+      wsRef.current.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          handleWebSocketMessage(data);
+        } catch (error) {
+          console.error('WebSocket message parsing error:', error);
+        }
+      };
+
+      wsRef.current.onclose = () => {
+        console.log('WebSocket disconnected');
+        setIsConnected(false);
+        // Attempt to reconnect after 3 seconds
+        setTimeout(connectWebSocket, 3000);
+      };
+
+      wsRef.current.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        setIsConnected(false);
+      };
+    } catch (error) {
+      console.error('WebSocket connection error:', error);
+      setIsConnected(false);
+    }
+  }, []);
+
+  // Handle WebSocket messages
+  const handleWebSocketMessage = useCallback((data) => {
+    switch (data.type) {
+      case 'stock_update':
+        setRealTimeData(prev => ({
+          ...prev,
+          stockPrices: {
+            ...prev.stockPrices,
+            [data.data.symbol]: {
+              price: data.data.price,
+              timestamp: data.data.time
+            }
+          },
+          lastUpdate: new Date()
+        }));
+        break;
+      case 'portfolio_update':
+        setRealTimeData(prev => ({
+          ...prev,
+          portfolioValue: data.data.totalValue,
+          lastUpdate: new Date()
+        }));
+        break;
+      case 'notification':
+        if (!isOpen) {
+          setNotificationCount(prev => prev + 1);
+        }
+        break;
+      default:
+        console.log('Unknown WebSocket message type:', data.type);
+    }
+  }, [isOpen]);
+
+  // Fetch real-time stock data via API
+  const fetchStockData = useCallback(async (symbol) => {
+    setIsLoadingData(true);
+    try {
+      const response = await Axios.get(`${config.base_url}/api/stock/price?symbol=${symbol}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching stock data:', error);
+      return null;
+    } finally {
+      setIsLoadingData(false);
+    }
+  }, []);
+
+  // Fetch portfolio data
+  const fetchPortfolioData = useCallback(async () => {
+    if (!userData?.user?.id || !userData?.token) return null;
+    
+    setIsLoadingData(true);
+    try {
+      const response = await Axios.get(
+        `${config.base_url}/api/stock/adduser/${userData.user.id}`,
+        {
+          headers: {
+            "x-auth-token": userData.token,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching portfolio data:', error);
+      return null;
+    } finally {
+      setIsLoadingData(false);
+    }
+  }, [userData]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -288,78 +419,171 @@ export default function Chatbot() {
     }
   }, [isOpen, notificationCount]);
 
-  const getBotResponse = (userInput) => {
+  // Initialize WebSocket connection when component mounts
+  useEffect(() => {
+    if (userData?.token) {
+      connectWebSocket();
+    }
+
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
+  }, [userData?.token, connectWebSocket]);
+
+  const getBotResponse = async (userInput) => {
     const input = userInput.toLowerCase();
     
-    // Enhanced response system with more sophisticated answers
+    // Check for specific stock symbols
+    const stockSymbols = ['AAPL', 'GOOGL', 'MSFT', 'TSLA', 'AMZN', 'META', 'NVDA'];
+    const mentionedStock = stockSymbols.find(symbol => 
+      input.includes(symbol.toLowerCase()) || input.includes(symbol)
+    );
+
+    // Real-time stock price query
+    if (mentionedStock || input.includes('price') || input.includes('stock price')) {
+      const symbol = mentionedStock || 'AAPL';
+      const stockData = realTimeData.stockPrices[symbol];
+      
+      if (stockData) {
+        const timeAgo = realTimeData.lastUpdate ? 
+          Math.floor((new Date() - realTimeData.lastUpdate) / 1000) : 'unknown';
+        return {
+          text: `📈 Real-time ${symbol} Data:\n\n💰 Current Price: $${stockData.price}\n⏰ Last Updated: ${timeAgo}s ago\n${isConnected ? '🟢 Live data connected' : '🔴 Offline mode'}\n\n💡 This data updates in real-time via WebSocket connection!`,
+          type: 'stock_data',
+          requiresApi: false
+        };
+      } else {
+        return {
+          text: `🔍 Fetching real-time data for ${symbol}...\n\n📊 Please wait while I get the latest market information.`,
+          type: 'stock_data',
+          requiresApi: true,
+          symbol: symbol
+        };
+      }
+    }
+
+    // Portfolio analysis with real-time data
     if (input.includes('portfolio') || input.includes('balance') || input.includes('analyze')) {
+      const portfolioValue = realTimeData.portfolioValue;
+      const cashBalance = userData?.user?.balance;
+      
+      let portfolioText = `📊 Your Portfolio Analysis:\n\n`;
+      
+      if (cashBalance) {
+        portfolioText += `💰 Cash Balance: $${cashBalance.toLocaleString()}\n`;
+      }
+      
+      if (portfolioValue) {
+        portfolioText += `📈 Portfolio Value: $${parseFloat(portfolioValue).toLocaleString()}\n`;
+        portfolioText += `⏰ Last Update: ${realTimeData.lastUpdate ? 
+          realTimeData.lastUpdate.toLocaleTimeString() : 'Not available'}\n`;
+      }
+      
+      portfolioText += `\n💡 Tips:\n• Diversify across different sectors\n• Monitor your positions regularly\n• Consider rebalancing quarterly\n\n${isConnected ? '🟢 Real-time updates active' : '🔴 Connect for live updates'}`;
+      
       return {
-        text: `Your portfolio analysis shows:\n\n💰 Cash Balance: $${userData?.user?.balance?.toLocaleString() || '---'}\n📊 Portfolio Value: Check your dashboard for real-time updates\n\n💡 Tips:\n• Diversify across different sectors\n• Monitor your positions regularly\n• Consider rebalancing quarterly`,
-        type: 'analysis'
+        text: portfolioText,
+        type: 'analysis',
+        requiresApi: !portfolioValue
       };
     }
-    if (input.includes('buy') || input.includes('purchase')) {
-      return {
-        text: `Here's how to buy stocks:\n\n1️⃣ Search for stocks using the search bar\n2️⃣ Review the stock's performance and charts\n3️⃣ Click "Buy" and enter quantity\n4️⃣ Confirm your purchase\n\n⚠️ Remember: Only invest what you can afford to lose!`,
-        type: 'instruction'
-      };
-    }
-    if (input.includes('sell') || input.includes('strategy')) {
-      return {
-        text: `Selling Strategy Tips:\n\n📈 Set profit targets (e.g., 20% gain)\n🛑 Use stop-loss orders to limit losses\n📊 Monitor technical indicators\n⏰ Don't let emotions drive decisions\n\n💡 Consider selling when:\n• Stock reaches your target price\n• Fundamentals change significantly\n• You need to rebalance your portfolio`,
-        type: 'strategy'
-      };
-    }
+
+    // Market trends with real-time data
     if (input.includes('market') || input.includes('trend')) {
+      const stockPrices = realTimeData.stockPrices;
+      let marketText = `📊 Current Market Analysis:\n\n`;
+      
+      if (Object.keys(stockPrices).length > 0) {
+        marketText += `📈 Live Stock Prices:\n`;
+        Object.entries(stockPrices).forEach(([symbol, data]) => {
+          marketText += `• ${symbol}: $${data.price}\n`;
+        });
+        marketText += `\n⏰ Last Update: ${realTimeData.lastUpdate ? 
+          realTimeData.lastUpdate.toLocaleTimeString() : 'Not available'}\n\n`;
+      }
+      
+      marketText += `💡 Market Insights:\n• Check the charts section for technical analysis\n• Stay updated with the news feed\n• Research before making decisions\n\n🔍 Pro tip: Look for patterns in volume and price movements`;
+      
       return {
-        text: `Current Market Analysis:\n\n📊 Market trends can be volatile\n📈 Check the charts section for technical analysis\n📰 Stay updated with the news feed\n🔍 Research before making decisions\n\n💡 Pro tip: Look for patterns in volume and price movements`,
+        text: marketText,
         type: 'market'
       };
     }
+
+    // Connection status
+    if (input.includes('connection') || input.includes('status') || input.includes('connected')) {
+      return {
+        text: `🔌 Connection Status:\n\n${isConnected ? '🟢 WebSocket Connected' : '🔴 WebSocket Disconnected'}\n📊 Real-time data: ${isConnected ? 'Active' : 'Inactive'}\n⏰ Last update: ${realTimeData.lastUpdate ? realTimeData.lastUpdate.toLocaleTimeString() : 'None'}\n\n${isConnected ? '✅ You\'re receiving live market data!' : '⚠️ Reconnecting to live data...'}`,
+        type: 'status'
+      };
+    }
+
+    // Standard responses
+    if (input.includes('buy') || input.includes('purchase')) {
+      return {
+        text: `🛒 How to buy stocks:\n\n1️⃣ Search for stocks using the search bar\n2️⃣ Review the stock's performance and charts\n3️⃣ Click "Buy" and enter quantity\n4️⃣ Confirm your purchase\n\n⚠️ Remember: Only invest what you can afford to lose!\n\n💡 Use real-time data to make informed decisions!`,
+        type: 'instruction'
+      };
+    }
+    
+    if (input.includes('sell') || input.includes('strategy')) {
+      return {
+        text: `📈 Selling Strategy Tips:\n\n🎯 Set profit targets (e.g., 20% gain)\n🛑 Use stop-loss orders to limit losses\n📊 Monitor technical indicators\n⏰ Don't let emotions drive decisions\n\n💡 Consider selling when:\n• Stock reaches your target price\n• Fundamentals change significantly\n• You need to rebalance your portfolio\n\n📊 Use our real-time data for timing!`,
+        type: 'strategy'
+      };
+    }
+    
     if (input.includes('risk')) {
       return {
-        text: `Risk Management Essentials:\n\n🛡️ Never invest more than you can afford to lose\n📊 Diversify across multiple stocks and sectors\n⏰ Set clear entry and exit points\n📈 Use stop-loss orders\n💰 Keep some cash for opportunities\n\n🎯 Remember: Preservation of capital is key!`,
+        text: `🛡️ Risk Management Essentials:\n\n💰 Never invest more than you can afford to lose\n📊 Diversify across multiple stocks and sectors\n⏰ Set clear entry and exit points\n📈 Use stop-loss orders\n💵 Keep some cash for opportunities\n\n🎯 Remember: Preservation of capital is key!\n\n📊 Monitor risk with our real-time portfolio tracking!`,
         type: 'risk'
       };
     }
+    
     if (input.includes('psychology')) {
       return {
-        text: `Trading Psychology Tips:\n\n🧠 Control your emotions - fear and greed are your enemies\n📊 Stick to your trading plan\n⏰ Don't chase losses or overtrade\n📈 Celebrate small wins, learn from losses\n💪 Build confidence through education and practice\n\n🎯 Success comes from discipline, not luck!`,
+        text: `🧠 Trading Psychology Tips:\n\n😤 Control your emotions - fear and greed are your enemies\n📋 Stick to your trading plan\n⏰ Don't chase losses or overtrade\n📈 Celebrate small wins, learn from losses\n💪 Build confidence through education and practice\n\n🎯 Success comes from discipline, not luck!`,
         type: 'psychology'
       };
     }
+    
     if (input.includes('education') || input.includes('learn')) {
       return {
-        text: `Trading Education Resources:\n\n📚 Start with the basics: P/E ratios, market cap, volume\n📊 Learn technical analysis: charts, indicators, patterns\n📰 Follow financial news and market updates\n🎓 Practice with paper trading first\n💡 Join trading communities and forums\n\n🚀 Knowledge is your best investment!`,
+        text: `📚 Trading Education Resources:\n\n📖 Start with the basics: P/E ratios, market cap, volume\n📊 Learn technical analysis: charts, indicators, patterns\n📰 Follow financial news and market updates\n🎓 Practice with paper trading first\n💬 Join trading communities and forums\n\n🚀 Knowledge is your best investment!`,
         type: 'education'
       };
     }
+    
     if (input.includes('news')) {
       return {
-        text: `Stay informed with:\n\n📰 Check the News section for latest updates\n📊 Monitor earnings reports and economic data\n🌍 Follow global market trends\n💼 Watch for sector-specific news\n⏰ Set up alerts for your holdings\n\n📈 Information is power in trading!`,
+        text: `📰 Stay informed with:\n\n📺 Check the News section for latest updates\n📊 Monitor earnings reports and economic data\n🌍 Follow global market trends\n💼 Watch for sector-specific news\n⏰ Set up alerts for your holdings\n\n📈 Information is power in trading!`,
         type: 'news'
       };
     }
+    
     if (input.includes('help')) {
       return {
-        text: `I can help you with:\n\n📊 Portfolio analysis and management\n💰 Buying and selling strategies\n📈 Market trends and analysis\n🛡️ Risk management techniques\n🧠 Trading psychology tips\n📚 Educational resources\n📰 Market news and updates\n\nJust ask me about any of these topics!`,
+        text: `🤖 I can help you with:\n\n📊 Real-time portfolio analysis\n💰 Live stock prices and data\n📈 Market trends and analysis\n🛡️ Risk management techniques\n🧠 Trading psychology tips\n📚 Educational resources\n📰 Market news and updates\n🔌 Connection status\n\n💡 Try asking: "What's AAPL price?" or "Analyze my portfolio"`,
         type: 'help'
       };
     }
+    
     if (input.includes('hello') || input.includes('hi')) {
       return {
-        text: `Hello! 👋 Ready to make some smart investment decisions today? I'm here to help you navigate the markets and build your portfolio. What would you like to know?`,
+        text: `Hello! 👋 Ready to make some smart investment decisions today?\n\n🚀 I'm your AI Trading Assistant with real-time market data!\n${isConnected ? '🟢 Live data connection active' : '🔴 Connecting to live data...'}\n\n💡 Ask me about stock prices, portfolio analysis, or market trends!`,
         type: 'greeting'
       };
     }
     
     return {
-      text: `I understand you're asking about "${userInput}". Here are some topics I can help with:\n\n• Portfolio analysis and management\n• Buying and selling strategies\n• Market trends and analysis\n• Risk management\n• Trading psychology\n• Educational resources\n\nTry asking about any of these areas!`,
+      text: `🤔 I understand you're asking about "${userInput}".\n\nHere are some topics I can help with:\n\n📊 Real-time stock prices (try "AAPL price")\n💰 Portfolio analysis and management\n📈 Market trends and analysis\n🛡️ Risk management\n🧠 Trading psychology\n📚 Educational resources\n\n💡 Try asking about specific stocks or say "help" for more options!`,
       type: 'general'
     };
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (input.trim()) {
       const userMessage = { 
         user: 'You', 
@@ -369,27 +593,139 @@ export default function Chatbot() {
       setMessages(prev => [...prev, userMessage]);
       
       setIsTyping(true);
-      
-      // Simulate bot response with delay
-      setTimeout(() => {
-        const response = getBotResponse(input);
-        const botResponse = { 
-          user: 'Bot', 
-          text: response.text,
-          timestamp: new Date(),
-          type: response.type
-        };
-        setMessages(prev => [...prev, botResponse]);
-        setIsTyping(false);
-      }, 1000 + Math.random() * 1000); // Random delay between 1-2 seconds
-      
+      const currentInput = input;
       setInput("");
+      
+      try {
+        // Get bot response (now async)
+        const response = await getBotResponse(currentInput);
+        
+        // If response requires API call and we don't have real-time data
+        if (response.requiresApi) {
+          let apiResponse = null;
+          
+          if (response.symbol) {
+            // Fetch specific stock data
+            apiResponse = await fetchStockData(response.symbol);
+          } else if (response.type === 'analysis') {
+            // Fetch portfolio data
+            apiResponse = await fetchPortfolioData();
+          }
+          
+          // Update response with API data
+          if (apiResponse) {
+            let updatedText = response.text;
+            
+            if (response.symbol && apiResponse.price) {
+              updatedText = `📈 Real-time ${response.symbol} Data:\n\n💰 Current Price: $${apiResponse.price}\n⏰ Updated: ${new Date(apiResponse.time).toLocaleTimeString()}\n🔄 Fetched via API\n\n💡 This data was fetched in real-time for you!`;
+            } else if (response.type === 'analysis' && apiResponse) {
+              updatedText += `\n\n📊 Fresh portfolio data loaded!`;
+            }
+            
+            response.text = updatedText;
+          }
+        }
+        
+        // Add delay for more natural conversation feel
+        const delay = 800 + Math.random() * 800; // 0.8-1.6 seconds
+        setTimeout(() => {
+          const botResponse = { 
+            user: 'Bot', 
+            text: response.text,
+            timestamp: new Date(),
+            type: response.type
+          };
+          setMessages(prev => [...prev, botResponse]);
+          setIsTyping(false);
+        }, delay);
+        
+      } catch (error) {
+        console.error('Error getting bot response:', error);
+        
+        // Fallback error response
+        setTimeout(() => {
+          const errorResponse = { 
+            user: 'Bot', 
+            text: `⚠️ Sorry, I encountered an error processing your request. Please try again or check your connection.\n\n🔄 Connection status: ${isConnected ? 'Connected' : 'Disconnected'}`,
+            timestamp: new Date(),
+            type: 'error'
+          };
+          setMessages(prev => [...prev, errorResponse]);
+          setIsTyping(false);
+        }, 1000);
+      }
     }
   };
 
-  const handleQuickAction = (action) => {
-    setInput(action);
-    handleSend();
+  const handleQuickAction = async (action) => {
+    if (action.trim()) {
+      const userMessage = { 
+        user: 'You', 
+        text: action,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, userMessage]);
+      
+      setIsTyping(true);
+      
+      try {
+        // Get bot response (now async)
+        const response = await getBotResponse(action);
+        
+        // If response requires API call and we don't have real-time data
+        if (response.requiresApi) {
+          let apiResponse = null;
+          
+          if (response.symbol) {
+            // Fetch specific stock data
+            apiResponse = await fetchStockData(response.symbol);
+          } else if (response.type === 'analysis') {
+            // Fetch portfolio data
+            apiResponse = await fetchPortfolioData();
+          }
+          
+          // Update response with API data
+          if (apiResponse) {
+            let updatedText = response.text;
+            
+            if (response.symbol && apiResponse.price) {
+              updatedText = `📈 Real-time ${response.symbol} Data:\n\n💰 Current Price: $${apiResponse.price}\n⏰ Updated: ${new Date(apiResponse.time).toLocaleTimeString()}\n🔄 Fetched via API\n\n💡 This data was fetched in real-time for you!`;
+            } else if (response.type === 'analysis' && apiResponse) {
+              updatedText += `\n\n📊 Fresh portfolio data loaded!`;
+            }
+            
+            response.text = updatedText;
+          }
+        }
+        
+        // Add delay for more natural conversation feel
+        const delay = 800 + Math.random() * 800;
+        setTimeout(() => {
+          const botResponse = { 
+            user: 'Bot', 
+            text: response.text,
+            timestamp: new Date(),
+            type: response.type
+          };
+          setMessages(prev => [...prev, botResponse]);
+          setIsTyping(false);
+        }, delay);
+        
+      } catch (error) {
+        console.error('Error in quick action:', error);
+        
+        setTimeout(() => {
+          const errorResponse = { 
+            user: 'Bot', 
+            text: `⚠️ Sorry, I encountered an error processing "${action}". Please try again.`,
+            timestamp: new Date(),
+            type: 'error'
+          };
+          setMessages(prev => [...prev, errorResponse]);
+          setIsTyping(false);
+        }, 1000);
+      }
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -430,9 +766,20 @@ export default function Chatbot() {
               <Typography variant="h6" style={{ fontWeight: 600 }}>
                 Trading Assistant
               </Typography>
-              <Typography variant="caption" style={{ opacity: 0.8 }}>
-                AI-powered trading support
-              </Typography>
+              <Box display="flex" alignItems="center" gap={0.5}>
+                <Typography variant="caption" style={{ opacity: 0.8 }}>
+                  AI-powered trading support
+                </Typography>
+                <Tooltip title={isConnected ? "Real-time data connected" : "Connecting to real-time data..."} placement="bottom">
+                  <Box display="flex" alignItems="center">
+                    {isConnected ? (
+                      <ConnectedIcon style={{ fontSize: 12, color: '#4caf50', marginLeft: 4 }} />
+                    ) : (
+                      <DisconnectedIcon style={{ fontSize: 12, color: '#f44336', marginLeft: 4 }} />
+                    )}
+                  </Box>
+                </Tooltip>
+              </Box>
             </Box>
           </Box>
           <Box display="flex" gap={0.5}>
@@ -560,4 +907,3 @@ export default function Chatbot() {
     </Fade>
   );
 }
-
