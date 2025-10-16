@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, Typography, Box } from "@mui/material";
+import { Link, Typography, Box, Button } from "@mui/material";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -9,7 +9,7 @@ import Title from "../Template/Title.jsx";
 import SaleModal from "./SaleModal";
 import styles from "./Dashboard.module.css";
 import LoadingSpinner from "../Loading/LoadingSpinner";
-import { Box, Typography, Link } from '@mui/material';
+import SellIcon from '@mui/icons-material/Sell';
 
 
 const Purchases = ({ purchasedStocks, portfolioLoading, portfolioError, refreshPortfolio }) => {
@@ -59,6 +59,7 @@ const Purchases = ({ purchasedStocks, portfolioLoading, portfolioError, refreshP
               <TableCell align="right">Current Price</TableCell>
               <TableCell align="right">Current Total</TableCell>
               <TableCell align="right">Difference</TableCell>
+              <TableCell align="center">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -106,6 +107,26 @@ const Purchases = ({ purchasedStocks, portfolioLoading, portfolioError, refreshP
                   >
                     {difference >= 0 ? "▲" : "▼"}{" "}
                     {Math.abs(difference * 100).toFixed(2)}%
+                  </TableCell>
+                  <TableCell align="center">
+                    <button 
+                      onClick={() => openSaleModal(row)} 
+                      style={{
+                        backgroundColor: '#ff4757',
+                        color: 'white',
+                        border: 'none',
+                        padding: '6px 12px',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        transition: 'background-color 0.3s'
+                      }}
+                      onMouseOver={(e) => e.target.style.backgroundColor = '#ff3838'}
+                      onMouseOut={(e) => e.target.style.backgroundColor = '#ff4757'}
+                    >
+                      Sell
+                    </button>
                   </TableCell>
                 </TableRow>
               );

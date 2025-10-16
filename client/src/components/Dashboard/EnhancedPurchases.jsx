@@ -73,6 +73,7 @@ const EnhancedPurchases = ({ purchasedStocks, portfolioLoading, portfolioError, 
               <TableCell align="right" style={{color: 'white', fontWeight: 600}}>📈 Current</TableCell>
               <TableCell align="right" style={{color: 'white', fontWeight: 600}}>💎 Worth</TableCell>
               <TableCell align="right" style={{color: 'white', fontWeight: 600}}>📊 Performance</TableCell>
+              <TableCell align="center" style={{color: 'white', fontWeight: 600}}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -147,6 +148,26 @@ const EnhancedPurchases = ({ purchasedStocks, portfolioLoading, portfolioError, 
                         ${profitLoss >= 0 ? '+' : ''}${roundNumber(profitLoss).toLocaleString()}
                       </Typography>
                     </div>
+                  </TableCell>
+                  <TableCell align="center">
+                    <button 
+                      onClick={() => openSaleModal(row)} 
+                      style={{
+                        backgroundColor: '#ff4757',
+                        color: 'white',
+                        border: 'none',
+                        padding: '6px 12px',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        transition: 'background-color 0.3s'
+                      }}
+                      onMouseOver={(e) => e.target.style.backgroundColor = '#ff3838'}
+                      onMouseOut={(e) => e.target.style.backgroundColor = '#ff4757'}
+                    >
+                      Sell
+                    </button>
                   </TableCell>
                 </TableRow>
               );

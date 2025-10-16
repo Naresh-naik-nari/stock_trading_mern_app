@@ -16,7 +16,6 @@ export default function RealtimeDemo() {
       <Grid item xs={12} md={6} lg={4}><PollingStock /></Grid>
       <Grid item xs={12} md={6} lg={4}><PortfolioWidget /></Grid>
       <Grid item xs={12} md={6} lg={4}><NotificationWidget /></Grid>
-      <Grid item xs={12} md={12} lg={12}><NewsFeed /></Grid>
     </Grid>
   );
 } 
