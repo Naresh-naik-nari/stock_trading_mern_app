@@ -13,7 +13,7 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 const app = express();
 
 app.use(cors({
-  origin: ["http://localhost:3000", "http://localhost:3001","https://stock-trading-mern-app.vercel.app"],
+  origin: ["http://localhost:3000", "http://localhost:3001", "https://stock-trading-mern-app.vercel.app"],
   credentials: true
 }));
 app.use(express.urlencoded({ extended: true }));
@@ -22,12 +22,10 @@ app.use(cookieParser("secretcode"));
 
 // DATABASE
 const DB = process.env.MONGO_URI;
+// const DB = "mongodb://127.0.0.1:27017/stock_trading_app"; // Using local DB
 
 mongoose
-  .connect(DB, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(DB)
   .then(() => {
     console.log("Connected to DB successfully");
   })
@@ -46,7 +44,7 @@ const stockRouter = require("./routes/stockRoutes");
 const server = http.createServer(app);
 
 // Initialize WebSocket server with ping-pong
-const wss = new WebSocket.Server({ 
+const wss = new WebSocket.Server({
   server,
   path: '/ws'  // Specify a path for WebSocket connections
 });

@@ -1,5 +1,5 @@
 var config = {};
 
-config.base_url = "https://stock-trading-mern-app.onrender.com";
+config.base_url = "http://localhost:5000";
 
 export default config;

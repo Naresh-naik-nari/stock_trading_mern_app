@@ -103,10 +103,12 @@ const Register = () => {
         setSuccessMessage("Registration successful! Redirecting to login...");
       }
     } catch (err) {
-      setUsernameError("");
-      setPasswordError("");
-      setEmailError("");
-      setRoleError("");
+      console.error("Registration Error:", err);
+      if (err.response && err.response.data && err.response.data.message) {
+        // setSuccessMessage(err.response.data.message); 
+        console.error("SERVER ERROR MESSAGE:", err.response.data.message);
+        setUsernameError(err.response.data.message);
+      }
     } finally {
       setLoading(false);
     }

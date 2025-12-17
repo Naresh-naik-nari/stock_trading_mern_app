@@ -50,6 +50,7 @@ exports.registerUser = async (req, res) => {
     const savedUser = await newUser.save();
     return res.status(201).json({ status: "success", user: { username: savedUser.username, email: savedUser.email, role: savedUser.role, id: savedUser._id } });
   } catch (error) {
+    console.error("Register Controller Error:", error);
     return errorMessage(res, error);
   }
 };

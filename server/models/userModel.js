@@ -7,8 +7,8 @@ const userSchema = new Schema(
       type: String,
       required: [true, "Username is required."],
       unique: [true, "An account with this username already exists."],
-      minlength: [4, "Username must be 4-15 characters."],
-      maxlength: [15, "Username must be 4-15 characters."],
+      // minlength: [4, "Username must be 4-15 characters."],
+      // maxlength: [15, "Username must be 4-15 characters."],
       lowercase: true,
     },
     password: {
@@ -26,7 +26,7 @@ const userSchema = new Schema(
       enum: ["user", "admin", "guest"],
       default: "user"
     },
-    balance:{
+    balance: {
       type: Number,
       required: true,
       default: 100000
