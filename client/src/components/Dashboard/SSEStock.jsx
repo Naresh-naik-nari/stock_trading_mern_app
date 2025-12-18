@@ -11,8 +11,8 @@ export default function SSEStock() {
     let eventSource = null;
     const connectSSE = () => {
       try {
-        eventSource = new EventSource("http://localhost:5000/api/stream/stock");
-        
+        eventSource = new EventSource("http://localhost:5001/api/stream/stock");
+
         eventSource.onopen = () => {
           setStatus('connected');
           setError(null);

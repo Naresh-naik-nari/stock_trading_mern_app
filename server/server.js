@@ -21,8 +21,8 @@ app.use(express.json());
 app.use(cookieParser("secretcode"));
 
 // DATABASE
-const DB = process.env.MONGO_URI;
-// const DB = "mongodb://127.0.0.1:27017/stock_trading_app"; // Using local DB
+// const DB = process.env.MONGO_URI;
+const DB = "mongodb://127.0.0.1:27017/stock_trading_app"; // Using local DB
 
 mongoose
   .connect(DB)
@@ -39,6 +39,7 @@ const authRouter = require("./routes/authRoutes");
 const dataRouter = require("./routes/dataRoutes");
 const newsRouter = require("./routes/newsRoutes");
 const stockRouter = require("./routes/stockRoutes");
+const chatRouter = require("./routes/chatRoutes");
 
 // Create HTTP server and wrap Express app
 const server = http.createServer(app);
@@ -219,6 +220,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/data", dataRouter);
 app.use("/api/news", newsRouter);
 app.use("/api/stock", stockRouter);
+app.use("/api/chat", chatRouter);
 
 // if (process.env.NODE_ENV === "production") {
 //   app.use(express.static("client/build"));
@@ -228,7 +230,7 @@ app.use("/api/stock", stockRouter);
 // }
 
 // Replace app.listen with server.listen
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 5001;
 server.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });

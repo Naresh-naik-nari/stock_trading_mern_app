@@ -6,7 +6,7 @@ export default function NewsFeed() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get("http://localhost:5000/api/news/")
+    axios.get("http://localhost:5001/api/news/")
       .then(res => {
         setNews(res.data.data || []);
         setLoading(false);

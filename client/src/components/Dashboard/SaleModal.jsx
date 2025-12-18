@@ -19,18 +19,39 @@ import Axios from "axios";
 import config from "../../config/Config";
 
 const SaleModal = ({ setSaleOpen, stock }) => {
+  const handleBackdropClick = (e) => {
+    // Only close if clicking the backdrop itself
+    if (e.target === e.currentTarget) {
+      setSaleOpen(false);
+    }
+  };
+
   return (
     <motion.div
       className={styles.backdrop}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      id="backdrop"
+      onClick={handleBackdropClick}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        background: 'rgba(0, 0, 0, 0.5)',
+        zIndex: 1000,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
     >
-      <Container>
-        <motion.div animate={{ opacity: 1, y: -20 }}>
-          <SaleModalContent setSaleOpen={setSaleOpen} stock={stock} />
-        </motion.div>
-      </Container>
+      <motion.div
+        animate={{ opacity: 1, y: -20 }}
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: '60vh', width: '100%' }}
+      >
+        <SaleModalContent setSaleOpen={setSaleOpen} stock={stock} />
+      </motion.div>
     </motion.div>
   );
 };

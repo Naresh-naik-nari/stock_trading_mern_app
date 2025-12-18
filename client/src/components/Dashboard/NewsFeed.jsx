@@ -12,7 +12,7 @@ export default function NewsFeed() {
     const fetchNews = async () => {
       try {
         setLoading(true);
-        const res = await axios.get("http://localhost:5000/api/news/");
+        const res = await axios.get("http://localhost:5001/api/news/");
         setNews(res.data.data || []);
         setError(null);
       } catch (err) {
@@ -25,7 +25,7 @@ export default function NewsFeed() {
 
     fetchNews();
     const interval = setInterval(fetchNews, 60000); // refresh every 60 seconds
-    
+
     return () => clearInterval(interval);
   }, []);
 

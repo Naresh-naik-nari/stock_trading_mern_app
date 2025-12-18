@@ -47,6 +47,8 @@ import {
 } from "@material-ui/icons";
 import { makeStyles } from "@material-ui/core/styles";
 import UserContext from "../../context/UserContext";
+import Axios from "axios";
+import config from "../../config/Config";
 
 const useStyles = makeStyles((theme) => ({
   chatContainer: {
@@ -249,8 +251,8 @@ export default function Chatbot() {
   const classes = useStyles();
   const { userData } = useContext(UserContext);
   const [messages, setMessages] = useState([
-    { 
-      user: 'Bot', 
+    {
+      user: 'Bot',
       text: 'Hello! I\'m your AI Trading Assistant. I can help you with portfolio management, market analysis, trading strategies, and more!',
       timestamp: new Date(),
       type: 'welcome'
@@ -290,7 +292,7 @@ export default function Chatbot() {
 
   const getBotResponse = (userInput) => {
     const input = userInput.toLowerCase();
-    
+
     // Enhanced response system with more sophisticated answers
     if (input.includes('portfolio') || input.includes('balance') || input.includes('analyze')) {
       return {
@@ -352,38 +354,63 @@ export default function Chatbot() {
         type: 'greeting'
       };
     }
-    
+
     return {
       text: `I understand you're asking about "${userInput}". Here are some topics I can help with:\n\n• Portfolio analysis and management\n• Buying and selling strategies\n• Market trends and analysis\n• Risk management\n• Trading psychology\n• Educational resources\n\nTry asking about any of these areas!`,
       type: 'general'
     };
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (input.trim()) {
-      const userMessage = { 
-        user: 'You', 
+      const userMessage = {
+        user: 'You',
         text: input,
         timestamp: new Date()
       };
       setMessages(prev => [...prev, userMessage]);
-      
-      setIsTyping(true);
-      
-      // Simulate bot response with delay
-      setTimeout(() => {
-        const response = getBotResponse(input);
-        const botResponse = { 
-          user: 'Bot', 
-          text: response.text,
-          timestamp: new Date(),
-          type: response.type
-        };
-        setMessages(prev => [...prev, botResponse]);
-        setIsTyping(false);
-      }, 1000 + Math.random() * 1000); // Random delay between 1-2 seconds
-      
       setInput("");
+      setIsTyping(true);
+
+      try {
+        const token = localStorage.getItem("auth-token");
+        const headers = { "x-auth-token": token };
+
+        let context = {
+          balance: userData?.user?.balance,
+          portfolioValue: "Check dashboard", // We could calculate this if we had the data here
+          holdings: [] // ideally we would pass holdings if available in context
+        };
+
+        const response = await Axios.post(
+          `${config.base_url}/api/chat`,
+          {
+            message: input,
+            context: context
+          },
+          { headers }
+        );
+
+        const botResponse = {
+          user: 'Bot',
+          text: response.data.text,
+          timestamp: new Date(),
+          type: response.data.type || 'ai_response'
+        };
+
+        setMessages(prev => [...prev, botResponse]);
+      } catch (error) {
+        console.error("Chat Error:", error);
+        const errorResponse = {
+          user: 'Bot',
+          text: "Sorry, I'm having trouble connecting to the server. Please try again.",
+          timestamp: new Date(),
+          type: 'error'
+        };
+        setMessages(prev => [...prev, errorResponse]);
+      } finally {
+        setIsTyping(false);
+      }
     }
   };
 
@@ -462,9 +489,8 @@ export default function Chatbot() {
             {messages.map((msg, index) => (
               <Zoom in={true} timeout={300} key={index}>
                 <div
-                  className={`${classes.messageContainer} ${
-                    msg.user === 'You' ? classes.userMessage : ''
-                  }`}
+                  className={`${classes.messageContainer} ${msg.user === 'You' ? classes.userMessage : ''
+                    }`}
                 >
                   {msg.user === 'Bot' && (
                     <Avatar style={{ backgroundColor: '#667eea' }}>
@@ -472,9 +498,8 @@ export default function Chatbot() {
                     </Avatar>
                   )}
                   <div
-                    className={`${classes.messageBubble} ${
-                      msg.user === 'You' ? classes.userBubble : classes.botBubble
-                    }`}
+                    className={`${classes.messageBubble} ${msg.user === 'You' ? classes.userBubble : classes.botBubble
+                      }`}
                   >
                     <Typography variant="body2" style={{ whiteSpace: 'pre-line' }}>
                       {msg.text}
@@ -491,7 +516,7 @@ export default function Chatbot() {
                 </div>
               </Zoom>
             ))}
-            
+
             {isTyping && (
               <div className={classes.typingIndicator}>
                 <div className={classes.typingDot}></div>
@@ -502,7 +527,7 @@ export default function Chatbot() {
                 </Typography>
               </div>
             )}
-            
+
             {messages.length === 1 && (
               <Card className={classes.welcomeCard}>
                 <CardContent>
@@ -528,7 +553,7 @@ export default function Chatbot() {
                 </CardContent>
               </Card>
             )}
-            
+
             <div ref={messagesEndRef} />
           </div>
 
