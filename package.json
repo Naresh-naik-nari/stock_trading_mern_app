@@ -1,0 +1,17 @@
+{
+  "name": "stock-trading-mern-app",
+  "version": "1.0.0",
+  "description": "Stock Trading Simulator - MERN Stack Application",
+  "scripts": {
+    "install-server": "cd server && npm install",
+    "install-client": "cd client && npm install",
+    "install-all": "npm run install-server && npm run install-client",
+    "start-server": "cd server && npm start",
+    "start-client": "cd client && npm start",
+    "build-client": "cd client && npm run build",
+    "vercel-build": "npm run install-all && npm run build-client"
+  },
+  "keywords": ["stock", "trading", "mern", "react", "nodejs", "mongodb"],
+  "author": "Naresh Naik",
+  "license": "ISC"
+}
