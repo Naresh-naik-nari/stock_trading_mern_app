@@ -2,7 +2,7 @@ import React, { useEffect, useContext, useState } from "react";
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import styles from "./App.module.css";
 import { Login, Register, NotFound, PageTemplate } from "./components";
-import Chatbot from "./components/Chatbot/Chatbot";
+import Chatbot from "./components/Chatbot/ChatbotWithGemini";
 import UserContext, { UserProvider } from "./context/UserContext";
 import Axios from "axios";
 import config from "./config/Config";

@@ -1,4 +1,5 @@
 import React, { useState, useContext } from "react";
+import ReactDOM from "react-dom";
 import UserContext from "../../context/UserContext";
 import styles from "../Template/PageTemplate.module.css";
 import {
@@ -19,19 +20,43 @@ import Axios from "axios";
 import config from "../../config/Config";
 
 const SaleModal = ({ setSaleOpen, stock }) => {
-  return (
+  // Use React Portal to render modal outside the main DOM tree
+  return ReactDOM.createPortal(
     <motion.div
-      className={styles.backdrop}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      id="backdrop"
+      exit={{ opacity: 0 }}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 9999,
+        padding: '20px',
+        boxSizing: 'border-box'
+      }}
+      onClick={(e) => {
+        // Close modal when clicking backdrop
+        if (e.target === e.currentTarget) {
+          setSaleOpen(false);
+        }
+      }}
     >
-      <Container>
-        <motion.div animate={{ opacity: 1, y: -20 }}>
-          <SaleModalContent setSaleOpen={setSaleOpen} stock={stock} />
-        </motion.div>
-      </Container>
-    </motion.div>
+      <motion.div 
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.8, opacity: 0 }}
+        style={{ maxWidth: '500px', width: '100%' }}
+      >
+        <SaleModalContent setSaleOpen={setSaleOpen} stock={stock} />
+      </motion.div>
+    </motion.div>,
+    document.body
   );
 };
 
@@ -42,6 +67,14 @@ const SaleModalContent = ({ setSaleOpen, stock }) => {
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Prevent body scroll when modal is open
+  React.useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
   const handleQuantityChange = (e) => {
     if (!isNaN(e.target.value) && Number(e.target.value) <= stock.quantity) {
       setQuantity(e.target.value);
@@ -49,6 +82,7 @@ const SaleModalContent = ({ setSaleOpen, stock }) => {
   };
 
   const handleClick = () => {
+    document.body.style.overflow = 'unset';
     setSaleOpen(false);
   };
 
@@ -73,7 +107,14 @@ const SaleModalContent = ({ setSaleOpen, stock }) => {
       });
       if (response.data.status === "success") {
         setSuccessMessage("Sale successful!");
-        setTimeout(() => window.location.reload(), 1500);
+        setTimeout(() => {
+          document.body.style.overflow = 'unset';
+          setSaleOpen(false);
+          // Trigger a refresh of the parent component instead of full page reload
+          if (window.location.pathname.includes('dashboard')) {
+            window.location.reload();
+          }
+        }, 1500);
       } else {
         setErrorMessage(response.data.message || "Sale failed.");
       }
@@ -85,16 +126,7 @@ const SaleModalContent = ({ setSaleOpen, stock }) => {
   };
 
   return (
-    <Grid
-      container
-      spacing={0}
-      direction="column"
-      alignItems="center"
-      justify="center"
-      style={{ minHeight: "100vh" }}
-    >
-      <Box width="60vh" boxShadow={1}>
-        <Card>
+    <Card style={{ width: '100%', maxWidth: '500px', margin: '0 auto' }}>
           <CardHeader
             action={
               <IconButton aria-label="Close" onClick={handleClick}>
@@ -170,8 +202,6 @@ const SaleModalContent = ({ setSaleOpen, stock }) => {
             <br />
           </CardContent>
         </Card>
-      </Box>
-    </Grid>
   );
 };
 

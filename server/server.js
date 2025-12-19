@@ -14,7 +14,11 @@ const app = express();
 
 app.use(cors({
   origin: ["http://localhost:3000", "http://localhost:3001", "https://stock-trading-mern-app.vercel.app"],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'x-auth-token'],
+  preflightContinue: false,
+  optionsSuccessStatus: 200
 }));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -39,6 +43,7 @@ const authRouter = require("./routes/authRoutes");
 const dataRouter = require("./routes/dataRoutes");
 const newsRouter = require("./routes/newsRoutes");
 const stockRouter = require("./routes/stockRoutes");
+const chatbotRouter = require("./routes/chatbotRoutes");
 
 // Create HTTP server and wrap Express app
 const server = http.createServer(app);
@@ -219,6 +224,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/data", dataRouter);
 app.use("/api/news", newsRouter);
 app.use("/api/stock", stockRouter);
+app.use("/api/chatbot", chatbotRouter);
 
 // if (process.env.NODE_ENV === "production") {
 //   app.use(express.static("client/build"));

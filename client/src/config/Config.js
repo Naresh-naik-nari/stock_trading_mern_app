@@ -1,5 +1,9 @@
 var config = {};
 
-config.base_url = "http://localhost:5000";
+// Use environment variable first, then fallback to defaults
+config.base_url = process.env.REACT_APP_API_URL || 
+  (process.env.NODE_ENV === 'production' 
+    ? "https://stock-trading-mern-app.vercel.app"  // Update this with your backend URL
+    : "http://localhost:5000");
 
 export default config;
