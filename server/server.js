@@ -16,8 +16,7 @@ app.use(cors({
   origin: [
     "http://localhost:3000", 
     "http://localhost:3001", 
-    "https://stock-trading-mern-app.vercel.app",
-    "https://stock-trading-backend.onrender.com" // Add your Render backend URL
+    "https://stock-trading-mern-app.vercel.app", // Add your Render backend URL
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

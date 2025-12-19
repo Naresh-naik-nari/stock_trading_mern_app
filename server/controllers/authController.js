@@ -57,9 +57,12 @@ exports.registerUser = async (req, res) => {
 
 exports.loginUser = async (req, res) => {
   try {
+    console.log('Login attempt:', { username: req.body.username, hasPassword: !!req.body.password });
+    
     const { username, password } = req.body;
 
     if (!username || !password) {
+      console.log('Missing fields:', { username: !!username, password: !!password });
       return res.status(200).json({
         status: "fail",
         message: "Not all fields have been entered.",
@@ -68,23 +71,39 @@ exports.loginUser = async (req, res) => {
 
     // Normalize username to lowercase to match how it's stored in DB
     const normalizedUsername = typeof username === 'string' ? username.toLowerCase() : username;
+    console.log('Looking for user:', normalizedUsername);
+    
     const user = await User.findOne({ username: normalizedUsername });
     if (!user) {
+      console.log('User not found:', normalizedUsername);
       return res.status(200).json({
         status: "fail",
         message: "Invalid credentials. Please try again.",
       });
     }
 
+    console.log('User found, checking password...');
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      console.log('Password mismatch for user:', normalizedUsername);
       return res.status(200).json({
         status: "fail",
         message: "Invalid credentials. Please try again.",
+      });
+    }
+
+    console.log('Password match, generating token...');
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is not set!');
+      return res.status(500).json({
+        status: "fail",
+        message: "Server configuration error.",
       });
     }
 
     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET);
+    console.log('Login successful for user:', normalizedUsername);
+    
     return res.status(200).json({
       token,
       user: {
@@ -96,7 +115,12 @@ exports.loginUser = async (req, res) => {
       },
     });
   } catch (error) {
-    return errorMessage(res, error);
+    console.error('Login error:', error);
+    console.error('Error stack:', error.stack);
+    return res.status(200).json({
+      status: "fail",
+      message: "Something went wrong. Please try again.",
+    });
   }
 };
 
