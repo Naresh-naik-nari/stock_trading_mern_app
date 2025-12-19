@@ -25,9 +25,7 @@ app.use(express.json());
 app.use(cookieParser("secretcode"));
 
 // DATABASE
-// const DB = process.env.MONGO_URI;
-const DB = "mongodb://127.0.0.1:27017/stock_trading_app"; // Using local DB
-
+const DB = process.env.MONGO_URI;
 mongoose
   .connect(DB)
   .then(() => {

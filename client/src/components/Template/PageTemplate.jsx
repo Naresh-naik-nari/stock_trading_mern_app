@@ -25,6 +25,7 @@ import Axios from "axios";
 import { makeStyles } from "@material-ui/core/styles";
 import config from "../../config/Config";
 import LoadingSpinner from "../Loading/LoadingSpinner";
+import ConnectionStatus from "../Dashboard/ConnectionStatus";
 
 const drawerWidth = 240;
 
@@ -225,6 +226,7 @@ const PageTemplate = () => {
   return (
     <div className={styles.root}>
       <CssBaseline />
+      <ConnectionStatus />
       <AppBar
         position="absolute"
         className={clsx(
@@ -287,7 +289,7 @@ const PageTemplate = () => {
           <SecondNavbar logout={logout} openSettings={openSettings} />
         </List>
       </Drawer>
-      <main className={styles.content}>
+      <main className={clsx(styles.content, open && styles.contentShift)}>
         <div className={classes.appBarSpacer} />
         {currentPage === "dashboard" && (
           <Dashboard

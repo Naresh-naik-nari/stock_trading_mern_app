@@ -183,7 +183,7 @@ const Search = ({ setPurchasedStocks, purchasedStocks }) => {
   };
 
   return (
-    <Container className={classes.addMargin}>
+    <Box className={classes.addMargin} width="100%" px={2} py={1}>
       <Autocomplete
         value={value}
         onChange={onSearchChange}
@@ -226,7 +226,7 @@ const Search = ({ setPurchasedStocks, purchasedStocks }) => {
       <br />
       <br />
       <br />
-    </Container>
+    </Box>
   );
 };
 

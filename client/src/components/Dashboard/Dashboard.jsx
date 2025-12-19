@@ -4,7 +4,7 @@ import clsx from "clsx";
 import { makeStyles } from "@material-ui/core/styles";
 import { Box, Container, Grid, Paper } from "@material-ui/core";
 import Chart from "./Chart";
-import Balance from "./Balance";
+import ImprovedBalance from "./ImprovedBalance";
 import EnhancedPurchases from "./EnhancedPurchases";
 import Copyright from "../Template/Copyright";
 import RealtimeDemo from "./RealtimeDemo";
@@ -27,7 +27,7 @@ const Dashboard = ({ purchasedStocks, portfolioLoading, portfolioError, refreshP
   const fixedHeightPaper = clsx(classes.paper, classes.fixedHeight);
 
   return (
-    <Container maxWidth="lg" className={styles.container}>
+    <Box className={styles.container} width="100%" px={2} py={1}>
       <Grid container spacing={3}>
         {/* Chart */}
         <Grid item xs={12} md={8} lg={9}>
@@ -38,7 +38,7 @@ const Dashboard = ({ purchasedStocks, portfolioLoading, portfolioError, refreshP
         {/* Balance */}
         <Grid item xs={12} md={4} lg={3}>
           <Paper className={fixedHeightPaper}>
-            <Balance 
+            <ImprovedBalance 
               purchasedStocks={purchasedStocks} 
               portfolioLoading={portfolioLoading}
             />
@@ -60,7 +60,7 @@ const Dashboard = ({ purchasedStocks, portfolioLoading, portfolioError, refreshP
       <Box pt={4}>
         <Copyright />
       </Box>
-    </Container>
+    </Box>
   );
 };
 

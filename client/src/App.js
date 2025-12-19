@@ -6,12 +6,23 @@ import Chatbot from "./components/Chatbot/ChatbotWithGemini";
 import UserContext, { UserProvider } from "./context/UserContext";
 import Axios from "axios";
 import config from "./config/Config";
-import LoadingSpinner from "./components/Loading/LoadingSpinner";
+import ImprovedLoadingSpinner from "./components/Loading/ImprovedLoadingSpinner";
 import PrivateRoute from "./components/PrivateRoute";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 function App() {
   const { userData, setUserData, loading } = useContext(UserContext);
   const [skipAuthCheck, setSkipAuthCheck] = useState(false);
+
+  // Reset global styles to remove any default margins/padding
+  useEffect(() => {
+    document.body.style.margin = '0';
+    document.body.style.padding = '0';
+    document.body.style.boxSizing = 'border-box';
+    document.documentElement.style.margin = '0';
+    document.documentElement.style.padding = '0';
+    document.documentElement.style.boxSizing = 'border-box';
+  }, []);
 
   useEffect(() => {
     const checkLoggedIn = async () => {
@@ -76,7 +87,7 @@ function App() {
 
   if (loading) {
     return (
-      <LoadingSpinner 
+      <ImprovedLoadingSpinner 
         fullScreen 
         text="Initializing Stock Trading Simulator..." 
         size={60} 
@@ -86,7 +97,14 @@ function App() {
 
   return (
     <Router>
-      <div className={styles.container}>
+      <div style={{ 
+        width: '100%', 
+        height: '100vh', 
+        margin: 0, 
+        padding: 0,
+        boxSizing: 'border-box',
+        overflow: 'hidden'
+      }}>
         <Routes>
           <Route path="/" element={<Navigate to={userData.user ? "/dashboard" : "/login"} replace />} />
           <Route path="/dashboard" element={
@@ -105,9 +123,11 @@ function App() {
 }
 
 const AppWrapper = () => (
-  <UserProvider>
-    <App />
-  </UserProvider>
+  <ErrorBoundary>
+    <UserProvider>
+      <App />
+    </UserProvider>
+  </ErrorBoundary>
 );
 
 export default AppWrapper;

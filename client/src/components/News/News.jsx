@@ -109,13 +109,13 @@ const News = () => {
   }, []);
 
   return (
-    <Container className={classes.cardGrid}>
+    <Box className={classes.cardGrid} width="100%" px={2} py={1}>
       {cards.length === 0 ? (
         <LoadingCards loading={loading} />
       ) : (
         <NewsCards cards={cards} classes={classes} />
       )}
-    </Container>
+    </Box>
   );
 };
 

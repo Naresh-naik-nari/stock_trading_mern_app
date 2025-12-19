@@ -23,8 +23,10 @@
 }
 
 .container {
-  padding-top: 32px;
-  padding-bottom: 32px;
+  padding: 0;
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
 }
 
 .backdrop {
@@ -51,10 +53,16 @@
 }
 
 .content {
-  margin-top: 25px;
   flex-grow: 1;
   height: 100vh;
   overflow: auto;
+  width: 100%;
+  margin-left: 72px; /* Account for closed drawer width */
+  transition: margin-left 225ms cubic-bezier(0.4, 0, 0.6, 1) 0ms;
+}
+
+.contentShift {
+  margin-left: 240px; /* Account for open drawer width */
 }
 
 .reset {
@@ -88,5 +96,20 @@
 
   100% {
     background-position: 0% 50%;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .content {
+    margin-left: 0;
+  }
+  
+  .contentShift {
+    margin-left: 0;
+  }
+  
+  .container {
+    padding: 0;
   }
 }
