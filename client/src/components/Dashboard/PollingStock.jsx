@@ -12,7 +12,7 @@ export default function PollingStock() {
     const fetchStock = async () => {
       try {
         setStatus('fetching');
-        const res = await axios.get("http://localhost:5000/api/stock/price");
+        const res = await axios.get("http://localhost:5001/api/stock/price");
         setStock(res.data);
         setStatus('connected');
         setError(null);
@@ -25,7 +25,7 @@ export default function PollingStock() {
 
     fetchStock();
     const interval = setInterval(fetchStock, 2000); // Poll every 2 seconds
-    
+
     return () => clearInterval(interval);
   }, []);
 

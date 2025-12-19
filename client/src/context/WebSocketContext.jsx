@@ -15,7 +15,7 @@ export const WebSocketProvider = ({ children }) => {
     const connectWebSocket = () => {
       setStatus("connecting");
       setError(null);
-      wsRef.current = new WebSocket("ws://localhost:5000/ws");
+      wsRef.current = new WebSocket("ws://localhost:5001/ws");
 
       wsRef.current.onopen = () => {
         setStatus("connected");
