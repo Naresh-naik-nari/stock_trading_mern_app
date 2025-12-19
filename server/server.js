@@ -13,7 +13,12 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 const app = express();
 
 app.use(cors({
-  origin: ["http://localhost:3000", "http://localhost:3001", "https://stock-trading-mern-app.vercel.app"],
+  origin: [
+    "http://localhost:3000", 
+    "http://localhost:3001", 
+    "https://stock-trading-mern-app.vercel.app",
+    "https://stock-trading-backend.onrender.com" // Add your Render backend URL
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'x-auth-token'],
@@ -213,6 +218,16 @@ app.get('/api/stream/stock', (req, res) => {
 
   req.on('close', () => {
     clearInterval(interval);
+  });
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'success',
+    message: 'Stock Trading API is running',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
