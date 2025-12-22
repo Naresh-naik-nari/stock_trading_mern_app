@@ -14,8 +14,8 @@ const app = express();
 
 app.use(cors({
   origin: [
-    "http://localhost:3000", 
-    "http://localhost:3001", 
+    "http://localhost:3000",
+    "http://localhost:3001",
     "https://stock-trading-mern-app.vercel.app", // Add your Render backend URL
   ],
   credentials: true,
@@ -30,8 +30,14 @@ app.use(cookieParser("secretcode"));
 
 // DATABASE
 const DB = process.env.MONGO_URI;
+
+const connectionOptions = {
+  serverSelectionTimeoutMS: 5000, // Keep trying to connect for 5 seconds
+  heartbeatFrequencyMS: 10000, // Check server status every 10 seconds
+};
+
 mongoose
-  .connect(DB)
+  .connect(DB, connectionOptions)
   .then(() => {
     console.log("Connected to DB successfully");
   })
@@ -39,6 +45,11 @@ mongoose
     console.error("MongoDB connection error:", err);
     console.error("Connection string (masked):", DB ? DB.replace(/\/\/[^:]+:[^@]+@/, "//***:***@") : "undefined");
   });
+
+// Log Mongoose connection status
+mongoose.connection.on('connected', () => console.log('Mongoose connected to DB'));
+mongoose.connection.on('error', (err) => console.error('Mongoose connection error:', err));
+mongoose.connection.on('disconnected', () => console.log('Mongoose disconnected from DB'));
 
 // ROUTES
 const authRouter = require("./routes/authRoutes");

@@ -1,9 +1,4 @@
 var config = {};
-
-// Use your deployed backend URL
-config.base_url ="https://stock-trading-mern-app.onrender.com";
-
-console.log('API Base URL:', config.base_url);
-console.log('Environment:', process.env.NODE_ENV);
+config.base_url = "https://stock-trading-mern-app.onrender.com";
 
 export default config;

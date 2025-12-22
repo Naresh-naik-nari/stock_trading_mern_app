@@ -1,12 +1,21 @@
 const User = require("../models/userModel");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
 
 const errorMessage = (res, error) => {
   return res.status(400).json({ status: "fail", message: error.message });
 };
 
 exports.registerUser = async (req, res) => {
+  // Check if database is connected
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({
+      status: "fail",
+      message: "Database connection is not established. Please check your MongoDB Atlas settings (IP whitelist).",
+    });
+  }
+
   try {
     const { username, password, email, role } = req.body;
 
@@ -56,9 +65,17 @@ exports.registerUser = async (req, res) => {
 };
 
 exports.loginUser = async (req, res) => {
+  // Check if database is connected
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({
+      status: "fail",
+      message: "Database connection is not established. Please check your MongoDB Atlas settings (IP whitelist).",
+    });
+  }
+
   try {
     console.log('Login attempt:', { username: req.body.username, hasPassword: !!req.body.password });
-    
+
     const { username, password } = req.body;
 
     if (!username || !password) {
@@ -72,7 +89,7 @@ exports.loginUser = async (req, res) => {
     // Normalize username to lowercase to match how it's stored in DB
     const normalizedUsername = typeof username === 'string' ? username.toLowerCase() : username;
     console.log('Looking for user:', normalizedUsername);
-    
+
     const user = await User.findOne({ username: normalizedUsername });
     if (!user) {
       console.log('User not found:', normalizedUsername);
@@ -103,7 +120,7 @@ exports.loginUser = async (req, res) => {
 
     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET);
     console.log('Login successful for user:', normalizedUsername);
-    
+
     return res.status(200).json({
       token,
       user: {
